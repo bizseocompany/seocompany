@@ -253,8 +253,13 @@ function confirmDeleteGoal(id){
     const newGoals=goals().filter(x=>x.id!==id);
     biz().goals=newGoals;
     biz().selectedGoal=newGoals[0]?.id||null;
-    forceSaveNow()
-      function downloadBackup(){
+    forceSaveNow();
+    closeModal();
+    render();
+  };
+}
+
+function downloadBackup(){
   const data=JSON.stringify(state,null,2);
   const blob=new Blob([data],{type:'application/json'});
   const a=document.createElement('a');
@@ -294,12 +299,8 @@ function openSettingsModal(){
   $('#backupBtn').onclick=downloadBackup;
   $('#restoreBtn').onclick=()=>$('#restoreFile').click();
   $('#restoreFile').onchange=e=>restoreBackup(e.target.files[0]);
-};
-    closeModal();
-    render();
-  };
 }
-  function openGoalModal(id){const g=goals().find(x=>x.id===id); if(!g)return; biz().selectedGoal=id; const months=(g.months||[]).slice().sort((a,b)=>String(b.month).localeCompare(String(a.month)));openModal(`${esc(g.icon||'🎯')} ${esc(g.title)}`,`<div class="goalRate"><div class="thinBar" style="flex:1"><i style="width:${goalRate(g)}%"></i></div><b>${goalRate(g)}%</b></div><div class="goalMeta"><span>이번달 목표 ${goalStats(g).monthCount}개</span><span>전체 목표 ${goalStats(g).totalCount}개</span></div><div class="modalBtns"><button class="cancel" id="editGoalBtn">수정</button><button class="dangerBtn" id="deleteGoalBtn">삭제</button></div><div class="cardHead" style="margin:18px 0 10px"><h3 style="font-size:17px">월 목표</h3><button class="tinyBtn" id="addMonthBtn">월 목표 추가</button></div><div class="todoList">${months.map(m=>`<button class="monthCard" data-month-open="${m.id}" data-goal-id="${g.id}"><h4>${esc(m.month)} · ${esc(m.title)}</h4><p>${(m.todos||[]).filter(t=>t.done).length}/${(m.todos||[]).length}개 완료</p><div class="goalRate"><div class="thinBar" style="flex:1"><i style="width:${rateForTodos(m.todos||[])}%"></i></div><b>${rateForTodos(m.todos||[])}%</b></div></button>`).join('')||'<p class="muted">월 목표가 없어요.</p>'}</div>`);$('#editGoalBtn').onclick=()=>editGoal(id);$('#deleteGoalBtn').onclick=()=>confirmDeleteGoal(id);$('#addMonthBtn').onclick=()=>editMonth();$$('[data-month-open]').forEach(b=>b.onclick=()=>openMonthTodos(b.dataset.monthOpen,b.dataset.goalId));}
+function openGoalModal(id){const g=goals().find(x=>x.id===id); if(!g)return; biz().selectedGoal=id; const months=(g.months||[]).slice().sort((a,b)=>String(b.month).localeCompare(String(a.month)));openModal(`${esc(g.icon||'🎯')} ${esc(g.title)}`,`<div class="goalRate"><div class="thinBar" style="flex:1"><i style="width:${goalRate(g)}%"></i></div><b>${goalRate(g)}%</b></div><div class="goalMeta"><span>이번달 목표 ${goalStats(g).monthCount}개</span><span>전체 목표 ${goalStats(g).totalCount}개</span></div><div class="modalBtns"><button class="cancel" id="editGoalBtn">수정</button><button class="dangerBtn" id="deleteGoalBtn">삭제</button></div><div class="cardHead" style="margin:18px 0 10px"><h3 style="font-size:17px">월 목표</h3><button class="tinyBtn" id="addMonthBtn">월 목표 추가</button></div><div class="todoList">${months.map(m=>`<button class="monthCard" data-month-open="${m.id}" data-goal-id="${g.id}"><h4>${esc(m.month)} · ${esc(m.title)}</h4><p>${(m.todos||[]).filter(t=>t.done).length}/${(m.todos||[]).length}개 완료</p><div class="goalRate"><div class="thinBar" style="flex:1"><i style="width:${rateForTodos(m.todos||[])}%"></i></div><b>${rateForTodos(m.todos||[])}%</b></div></button>`).join('')||'<p class="muted">월 목표가 없어요.</p>'}</div>`);$('#editGoalBtn').onclick=()=>editGoal(id);$('#deleteGoalBtn').onclick=()=>confirmDeleteGoal(id);$('#addMonthBtn').onclick=()=>editMonth();$$('[data-month-open]').forEach(b=>b.onclick=()=>openMonthTodos(b.dataset.monthOpen,b.dataset.goalId));}
 function openMonthTodos(monthId,goalId){const g=goals().find(x=>x.id===goalId)||goal(); const m=(g.months||[]).find(x=>x.id===monthId); if(!m)return; biz().selectedGoal=g.id; biz().selectedMonth=m.month;openModal(`${esc(m.month)} · ${esc(m.title)}`,`<div class="goalRate"><div class="thinBar" style="flex:1"><i style="width:${rateForTodos(m.todos||[])}%"></i></div><b>${rateForTodos(m.todos||[])}%</b></div><div class="modalBtns"><button class="cancel" id="editMonthBtn">월 목표 수정</button><button class="ok" id="addTodoInMonth">투두 추가</button></div><div class="todoList">${(m.todos||[]).map(t=>todoRow({...t,_goal:g,_month:m})).join('')||'<p class="muted">투두가 없어요.</p>'}</div>`);$('#editMonthBtn').onclick=()=>editMonth(m.id,g.id);$('#addTodoInMonth').onclick=()=>editTodo(null);$$('[data-check-task]').forEach(b=>b.onclick=e=>{e.stopPropagation();confirmTodoCheck(b.dataset.checkTask,()=>openMonthTodos(monthId,goalId))});$$('[data-open-task]').forEach(b=>b.onclick=()=>editTodo(b.dataset.openTask));}
 function editGoal(id){const g=id?goals().find(x=>x.id===id):{icon:'🎯',title:'',desc:''};openModal(id?'목표 수정':'목표 추가',`<label>아이콘<input class="input" id="gIcon" value="${esc(g.icon||'🎯')}"></label><label>목표명<input class="input" id="gTitle" value="${esc(g.title||'')}"></label><label>설명<textarea class="textarea" id="gDesc">${esc(g.desc||'')}</textarea></label><div class="modalBtns">${id?'<button class="dangerBtn" id="delGoal">삭제</button>':''}<button class="cancel" id="cancelM">취소</button><button class="ok" id="saveGoal">저장</button></div>`);$('#cancelM').onclick=closeModal;$('#saveGoal').onclick=()=>{if(id){g.icon=$('#gIcon').value||'🎯';g.title=$('#gTitle').value||'새 목표';g.desc=$('#gDesc').value}else{const ng={id:uid(),icon:$('#gIcon').value||'🎯',title:$('#gTitle').value||'새 목표',desc:$('#gDesc').value,months:[]};goals().push(ng);biz().selectedGoal=ng.id}closeModal();render()}; if(id)$('#delGoal').onclick=()=>confirmDeleteGoal(id)}
 function editMonth(id,goalId){
