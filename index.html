@@ -200,7 +200,17 @@ const businessQuotes=['완벽한 상품보다 판매되는 상품이 먼저다.'
 function dailyQuote(){const d=new Date();const key=d.getFullYear()*10000+(d.getMonth()+1)*100+d.getDate();return businessQuotes[key%businessQuotes.length]}
 function notices(){if(!biz().notices)biz().notices=[];return biz().notices} function latestNotice(){return notices().slice().sort((a,b)=>String(b.date).localeCompare(String(a.date)))[0]}
 function twoWeekDays(){const base=new Date((biz().selectedDate||today())+'T00:00:00');const day=base.getDay();const start=new Date(base);start.setDate(base.getDate()-day);const arr=[];for(let i=0;i<14;i++){const d=new Date(start);d.setDate(start.getDate()+i);arr.push(d)}return arr}
-
+function allTodos(){
+  return goals().flatMap(g=>
+    (g.months||[]).flatMap(m=>
+      (m.todos||[]).map(t=>({
+        ...t,
+        _goal:g,
+        _month:m
+      }))
+    )
+  );
+}
 function todayTodos(){return allTodos().filter(t=>t.date===today())} function selectedDateTodos(){return allTodos().filter(t=>t.date===biz().selectedDate)}
 function applyTheme(){const bt=state.bizThemes?.[state.biz]||{mode:state.mode,color:state.color};state.mode=bt.mode||state.mode;state.color=bt.color||state.color;document.body.dataset.mode=state.mode;document.body.dataset.color=state.color;$$('[data-mode]').forEach(b=>b.classList.toggle('on',b.dataset.mode===state.mode));$$('[data-color]').forEach(b=>b.classList.toggle('on',b.dataset.color===state.color))}
 function renderShell(){if(!biz().goals)biz().goals=[];if(!biz().notices)biz().notices=[];if(!biz().memoCategories)biz().memoCategories=['업무','아이디어','개인'];if(goals().length&&!goals().some(g=>g.id===biz().selectedGoal))biz().selectedGoal=goals()[0]?.id;if(!goals().length)biz().selectedGoal=null;applyTheme();$('#sideAvatar').textContent=userEmoji[state.user]||'🐰';$('#topProfileBtn').textContent=userEmoji[state.user]||'🐰';$('#sideName').textContent=state.user+'님';$('#topTitle').textContent=bizNames[state.biz];$('#bizPill').textContent=bizNames[state.biz]+' ▼';$('#sideTodo').textContent=todayTodos().filter(t=>!t.done).length+'개';$('#sideRate').textContent=totalRate()+'%';$$('#sideNav button,#mobileNav button').forEach(b=>b.classList.toggle('on',b.dataset.tab===state.tab));$$('.bizBtns button[data-biz]').forEach(b=>b.classList.toggle('on',b.dataset.biz===state.biz));$$('[data-login-user]').forEach(b=>{const on=b.dataset.loginUser===state.user;b.classList.toggle('on',on);let badge=b.querySelector('.checkBadge');if(on&&!badge){badge=document.createElement('span');badge.className='checkBadge';badge.textContent='◉';b.prepend(badge)}if(!on&&badge)badge.remove()});$$('[data-login-biz]').forEach(b=>b.classList.toggle('on',b.dataset.loginBiz===state.biz))}
