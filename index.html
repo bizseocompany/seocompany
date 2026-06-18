@@ -167,7 +167,12 @@ function forceSaveNow(){
     remoteRef.set(state).catch(err=>console.warn('Firebase force save error',err));
   }
 }
-function biz(){return state.data[state.biz]} function goals(){return biz().goals||[]} function goal(){return goals().find(g=>g.id===biz().selectedGoal)||goals()[0]} function monthObj(g=goal()){
+function biz(){
+  if(!state.data) state.data={};
+  if(!state.biz) state.biz='sienne';
+  if(!state.data[state.biz]) state.data[state.biz]=seedBiz(state.biz);
+  return state.data[state.biz];
+} function goals(){return biz().goals||[]} function goal(){return goals().find(g=>g.id===biz().selectedGoal)||goals()[0]} function monthObj(g=goal()){
   if(!g){
     alert('먼저 목표카드를 만들어주세요.');
     return null;
