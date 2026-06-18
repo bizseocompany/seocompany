@@ -422,15 +422,27 @@ function editMonth(id,goalId){
   `).join('');
 
   openModal(id?'투두 수정':'투두 추가',
-  `<label>목표카드
-    <select class="select" id="tGoal">${goalOptions}</select>
-  </label>
-  <label>월 목표
-    <select class="select" id="tMonth">${monthOptions}</select>
-  </label>
-  <label>내용<input class="input" id="tText" value="${esc(t.text||'')}"></label>
-  <label>일정 날짜<input class="input" id="tDate" type="date" value="${esc(t.date||today())}"></label>
-  <label>담당<input class="input" id="tOwner" value="${esc(t.owner||state.user)}"></label>
+  `<div class="pathBox" style="margin-bottom:16px">
+  <div class="pathLine">
+    <b>오늘 투두</b>
+    <span>→ 목표카드 → 월 목표에 연결됩니다</span>
+  </div>
+</div>
+
+<label>목표카드</label>
+<select class="select" id="tGoal">${goalOptions}</select>
+
+<label>월 목표</label>
+<select class="select" id="tMonth">${monthOptions}</select>
+
+<label>할 일</label>
+<input class="input" id="tText" value="${esc(t.text||'')}" placeholder="해야 할 일을 입력하세요">
+
+<label>일정 날짜</label>
+<input class="input" id="tDate" type="date" value="${esc(t.date||today())}">
+
+<label>담당자</label>
+<input class="input" id="tOwner" value="${esc(t.owner||state.user)}">
   <div class="modalBtns">
     ${id?'<button class="dangerBtn" id="delTodo">삭제</button>':''}
     <button class="cancel" id="cancelM">취소</button>
@@ -516,7 +528,10 @@ function viewMemo(id){const m=biz().memos.find(x=>x.id===id);if(!m)return;const 
 function editMemo(id){const m=id?biz().memos.find(x=>x.id===id):{cat:(biz().memoCategories||['업무'])[0],title:'',text:'',star:false,date:today(),owner:state.user};if(id && (m.owner||m.author||'서')!==state.user){viewMemo(id);return}openModal(id?'메모 수정':'메모 추가',`<label>카테고리<select class="select" id="mCat">${(biz().memoCategories||[]).map(c=>`<option ${m.cat===c?'selected':''}>${esc(c)}</option>`).join('')}</select></label><label>제목<input class="input" id="mTitle" value="${esc(m.title||'')}"></label><label>내용<textarea class="textarea" id="mText">${esc(m.text||'')}</textarea></label><label style="display:flex;gap:8px;margin-top:10px"><input type="checkbox" id="mStar" ${m.star?'checked':''}> 중요 표시</label><div class="modalBtns">${id?'<button class="dangerBtn" id="delMemo">삭제</button>':''}<button class="cancel" id="cancelM">취소</button><button class="ok" id="saveMemo">저장</button></div>`);$('#cancelM').onclick=closeModal;$('#saveMemo').onclick=()=>{if(id){Object.assign(m,{cat:$('#mCat').value,title:$('#mTitle').value||'메모',text:$('#mText').value,star:$('#mStar').checked,owner:m.owner||m.author||state.user})}else{biz().memos.push({id:uid(),cat:$('#mCat').value,title:$('#mTitle').value||'메모',text:$('#mText').value,star:$('#mStar').checked,date:today(),owner:state.user})}closeModal();render()}; if(id)$('#delMemo').onclick=()=>{biz().memos=biz().memos.filter(x=>x.id!==id);closeModal();render()}}
 function editNotice(id){const n=id?notices().find(x=>x.id===id):{title:'',text:'',date:today(),author:state.user};openModal(id?'공지 수정':'공지 추가',`<label>제목<input class="input" id="nTitle" value="${esc(n.title||'')}"></label><label>내용<textarea class="textarea" id="nText">${esc(n.text||'')}</textarea></label><div class="modalBtns">${id?'<button class="dangerBtn" id="delNotice">삭제</button>':''}<button class="cancel" id="cancelM">취소</button><button class="ok" id="saveNotice">저장</button></div>`);$('#cancelM').onclick=closeModal;$('#saveNotice').onclick=()=>{if(id){Object.assign(n,{title:$('#nTitle').value||'공지',text:$('#nText').value,date:today(),author:state.user})}else{notices().push({id:uid(),title:$('#nTitle').value||'공지',text:$('#nText').value,date:today(),author:state.user})}closeModal();render()}; if(id)$('#delNotice').onclick=()=>{biz().notices=notices().filter(x=>x.id!==id);closeModal();render()}}
 function editRecord(id){const r=id?biz().records.find(x=>x.id===id):{type:'income',title:'',amount:0,date:today(),cat:'',memo:''};openModal(id?'내역 수정':'내역 추가',`<label>구분<select class="select" id="rType"><option value="income" ${r.type==='income'?'selected':''}>수입</option><option value="expense" ${r.type==='expense'?'selected':''}>지출</option></select></label><label>제목<input class="input" id="rTitle" value="${esc(r.title||'')}"></label><label>금액<input class="input" id="rAmount" type="number" value="${r.amount||0}"></label><label>날짜<input class="input" id="rDate" type="date" value="${esc(r.date||today())}"></label><label>카테고리<input class="input" id="rCat" value="${esc(r.cat||'')}"></label><label>메모<textarea class="textarea" id="rMemo" placeholder="거래 관련 메모를 적어두세요.">${esc(r.memo||'')}</textarea></label><div class="modalBtns">${id?'<button class="dangerBtn" id="delRecord">삭제</button>':''}<button class="cancel" id="cancelM">취소</button><button class="ok" id="saveRecord">저장</button></div>`);$('#cancelM').onclick=closeModal;$('#saveRecord').onclick=()=>{const val={type:$('#rType').value,title:$('#rTitle').value||'내역',amount:Number($('#rAmount').value||0),date:$('#rDate').value,cat:$('#rCat').value,memo:$('#rMemo').value}; if(id)Object.assign(r,val);else biz().records.push({id:uid(),...val});closeModal();render()}; if(id)$('#delRecord').onclick=()=>{biz().records=biz().records.filter(x=>x.id!==id);closeModal();render()}}
-function bindGlobal(){ $('#startBtn').onclick=()=>{state.started=true;$('#login').classList.add('hidden');$('#app').classList.remove('hidden');render()}; $('#logoutBtn').onclick=()=>{state.started=false;$('#app').classList.add('hidden');$('#login').classList.remove('hidden');save()}; $('#modalClose').onclick=closeModal; $('#modalBg').onclick=e=>{if(e.target.id==='modalBg')closeModal()}; $$('[data-login-user]').forEach(b=>b.onclick=()=>{state.user=b.dataset.loginUser;renderShell();save()}); $$('[data-login-biz]').forEach(b=>b.onclick=()=>{state.biz=b.dataset.loginBiz;renderShell();save()}); $$('[data-mode]').forEach(b=>b.onclick=()=>{state.mode=b.dataset.mode;state.bizThemes[state.biz]={mode:state.mode,color:state.color};applyTheme();save()}); $$('[data-color]').forEach(b=>b.onclick=()=>{state.color=b.dataset.color;state.bizThemes[state.biz]={mode:state.mode,color:state.color};applyTheme();save()}); $$('#sideNav button,#mobileNav button').forEach(b=>b.onclick=()=>{state.tab=b.dataset.tab;render()}); $$('.bizBtns button[data-biz]').forEach(b=>b.onclick=()=>{state.biz=b.dataset.biz;if(!biz().selectedGoal)biz().selectedGoal=goals()[0]?.id;render()}); $('#profileBtn').onclick=openSettingsModal; $('#topProfileBtn').onclick=openSettingsModal; $('#bizPill').onclick=()=>{state.biz=state.biz==='sienne'?'dear':'sienne';render()}; }
+function bindGlobal(){ $('#startBtn').onclick=()=>{state.started=true;$('#login').classList.add('hidden');$('#app').classList.remove('hidden');render()}; $('#logoutBtn').onclick=()=>{state.started=false;$('#app').classList.add('hidden');$('#login').classList.remove('hidden');save()}; $('#modalClose').onclick=closeModal; $('#modalBg').onclick=e=>{
+  e.stopPropagation();
+};
+$$('[data-login-user]').forEach(b=>b.onclick=()=>{state.user=b.dataset.loginUser;renderShell();save()}); $$('[data-login-biz]').forEach(b=>b.onclick=()=>{state.biz=b.dataset.loginBiz;renderShell();save()}); $$('[data-mode]').forEach(b=>b.onclick=()=>{state.mode=b.dataset.mode;state.bizThemes[state.biz]={mode:state.mode,color:state.color};applyTheme();save()}); $$('[data-color]').forEach(b=>b.onclick=()=>{state.color=b.dataset.color;state.bizThemes[state.biz]={mode:state.mode,color:state.color};applyTheme();save()}); $$('#sideNav button,#mobileNav button').forEach(b=>b.onclick=()=>{state.tab=b.dataset.tab;render()}); $$('.bizBtns button[data-biz]').forEach(b=>b.onclick=()=>{state.biz=b.dataset.biz;if(!biz().selectedGoal)biz().selectedGoal=goals()[0]?.id;render()}); $('#profileBtn').onclick=openSettingsModal; $('#topProfileBtn').onclick=openSettingsModal; $('#bizPill').onclick=()=>{state.biz=state.biz==='sienne'?'dear':'sienne';render()}; }
 bindGlobal(); if(state.started){$('#login').classList.add('hidden');$('#app').classList.remove('hidden')} render(); initFirebaseSync();
 </script>
 </body>
