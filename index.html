@@ -212,7 +212,7 @@ function allTodos(){
 }
 function todayTodos(){return allTodos().filter(t=>t.date===today())} function selectedDateTodos(){return allTodos().filter(t=>t.date===biz().selectedDate)}
 function applyTheme(){const bt=state.bizThemes?.[state.biz]||{mode:state.mode,color:state.color};state.mode=bt.mode||state.mode;state.color=bt.color||state.color;document.body.dataset.mode=state.mode;document.body.dataset.color=state.color;$$('[data-mode]').forEach(b=>b.classList.toggle('on',b.dataset.mode===state.mode));$$('[data-color]').forEach(b=>b.classList.toggle('on',b.dataset.color===state.color))}
-function renderShell(){if(!biz().goals)biz().goals=[];if(!biz().notices)biz().notices=[];if(!biz().memoCategories)biz().memoCategories=['업무','아이디어','개인'];if(goals().length&&!goals().some(g=>g.id===biz().selectedGoal))biz().selectedGoal=goals()[0]?.id;if(!goals().length)biz().selectedGoal=null;applyTheme();$('#sideAvatar').textContent=userEmoji[state.user]||'🐰';$('#topProfileBtn').textContent=userEmoji[state.user]||'🐰';$('#sideName').textContent=state.user+'님';$('#topTitle').textContent=bizNames[state.biz];$('#bizPill').textContent=bizNames[state.biz]+' ▼';$('#sideTodo').textContent=todayTodos().filter(t=>!t.done).length+'개';$('#sideRate').textContent=totalRate()+'%';$$('#sideNav button,#mobileNav button').forEach(b=>b.classList.toggle('on',b.dataset.tab===state.tab));$$('.bizBtns button[data-biz]').forEach(b=>b.classList.toggle('on',b.dataset.biz===state.biz));$$('[data-login-user]').forEach(b=>{const on=b.dataset.loginUser===state.user;b.classList.toggle('on',on);let badge=b.querySelector('.checkBadge');if(on&&!badge){badge=document.createElement('span');badge.className='checkBadge';badge.textContent='◉';b.prepend(badge)}if(!on&&badge)badge.remove()});$$('[data-login-biz]').forEach(b=>b.classList.toggle('on',b.dataset.loginBiz===state.biz))}
+function renderShell(){if(!biz().goals)biz().goals=[];if(!biz().notices)biz().notices=[];if(!biz().memoCategories)biz().memoCategories=['업무','아이디어','개인'];if(goals().length&&!goals().some(g=>g.id===biz().selectedGoal))biz().selectedGoal=goals()[0]?.id;if(!goals().length)biz().selectedGoal=null;applyTheme();$('#sideAvatar').textContent=userEmoji[state.user]||'🐰';$('#topProfileBtn').textContent=userEmoji[state.user]||'🐰';$('#sideName').textContent=state.user+'님';$('#topTitle').textContent=bizNames[state.biz];$('#bizPill').textContent='사업변경 ▼';$('#sideTodo').textContent=todayTodos().filter(t=>!t.done).length+'개';$('#sideRate').textContent=totalRate()+'%';$$('#sideNav button,#mobileNav button').forEach(b=>b.classList.toggle('on',b.dataset.tab===state.tab));$$('.bizBtns button[data-biz]').forEach(b=>b.classList.toggle('on',b.dataset.biz===state.biz));$$('[data-login-user]').forEach(b=>{const on=b.dataset.loginUser===state.user;b.classList.toggle('on',on);let badge=b.querySelector('.checkBadge');if(on&&!badge){badge=document.createElement('span');badge.className='checkBadge';badge.textContent='◉';b.prepend(badge)}if(!on&&badge)badge.remove()});$$('[data-login-biz]').forEach(b=>b.classList.toggle('on',b.dataset.loginBiz===state.biz))}
 function render(){renderShell();const map={home,goal:goalPage,schedule,memo:memoPage,account};$('#content').innerHTML=(map[state.tab]||home)();bindContent();save()}
 function todoRow(t){const stamp=t.done?`<span class="completionStamp">${esc(completedLabel(t))}</span>`:'';return `<div class="todoRow ${t.done?'doneRow':''}" data-task="${t.id}"><button class="check ${t.done?'done':''}" data-check-task="${t.id}"></button><div class="todoText" data-open-task="${t.id}"><b>${esc(t.text)}</b><small>${esc(t._goal?.title||'목표')} · ${esc(t._month?.title||'월 목표')} · ${esc(t.date||'날짜 미정')}</small>${stamp}</div></div>`}
 function goalCard(g){const st=goalStats(g);return `<button class="goalCard ${goal()?.id===g.id?'on':''}" data-goal-actions="${g.id}"><div class="goalIcon">${esc(g.icon||'🎯')}</div><h4>${esc(g.title)}</h4><p>${esc(g.desc||'')}</p><div class="goalRate"><div class="thinBar" style="flex:1"><i style="width:${goalRate(g)}%"></i></div><b>${goalRate(g)}%</b></div><div class="goalMeta"><span>이번달 목표 ${st.monthCount}개</span><span>전체 목표 ${st.totalCount}개</span><span>투두 ${st.todoCount}개</span></div></button>`}
@@ -286,15 +286,35 @@ function restoreBackup(file){
   };
   reader.readAsText(file);
 }
-
 function openSettingsModal(){
-  openModal('⚙️ 데이터 관리',
-  `<p class="muted">작성한 내용을 JSON 파일로 백업하거나, 백업 파일로 복원할 수 있어요.</p>
+  openModal('⚙️ 설정',
+  `<p class="muted">테마를 변경하거나 데이터를 백업/복원할 수 있어요.</p>
+
+  <div class="label">테마 선택</div>
+  <div class="seg">
+    <button class="${state.mode==='light'?'on':''}" id="setLight">☀️ 라이트</button>
+    <button class="${state.mode==='dark'?'on':''}" id="setDark">🌙 다크</button>
+  </div>
+
+  <div class="label">포인트 컬러</div>
+  <div class="seg color3">
+    <button class="${state.color==='pink'?'on':''}" id="setPink">🌸 핑크</button>
+    <button class="${state.color==='purple'?'on':''}" id="setPurple">💜 퍼플</button>
+    <button class="${state.color==='blue'?'on':''}" id="setBlue">💙 블루</button>
+  </div>
+
+  <div class="label">데이터 관리</div>
   <div class="modalBtns">
     <button class="ok" id="backupBtn">백업 다운로드</button>
     <button class="cancel" id="restoreBtn">백업 복원</button>
   </div>
   <input type="file" id="restoreFile" accept="application/json" class="hidden">`);
+
+  $('#setLight').onclick=()=>{state.mode='light';state.bizThemes[state.biz]={mode:state.mode,color:state.color};applyTheme();save();openSettingsModal()};
+  $('#setDark').onclick=()=>{state.mode='dark';state.bizThemes[state.biz]={mode:state.mode,color:state.color};applyTheme();save();openSettingsModal()};
+  $('#setPink').onclick=()=>{state.color='pink';state.bizThemes[state.biz]={mode:state.mode,color:state.color};applyTheme();save();openSettingsModal()};
+  $('#setPurple').onclick=()=>{state.color='purple';state.bizThemes[state.biz]={mode:state.mode,color:state.color};applyTheme();save();openSettingsModal()};
+  $('#setBlue').onclick=()=>{state.color='blue';state.bizThemes[state.biz]={mode:state.mode,color:state.color};applyTheme();save();openSettingsModal()};
 
   $('#backupBtn').onclick=downloadBackup;
   $('#restoreBtn').onclick=()=>$('#restoreFile').click();
