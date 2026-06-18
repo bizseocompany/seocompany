@@ -111,10 +111,28 @@ let state;
 try{state=JSON.parse(localStorage.getItem(STORAGE_KEY)||localStorage.getItem(LEGACY_STORAGE_KEY))||defaults}catch(e){state=defaults}
 let remoteRef=null, remoteReady=false, applyingRemote=false, saveTimer=null;
 function mergeDefaults(obj){
-  const merged={...defaults,...(obj||{})};
-  merged.bizThemes={...defaults.bizThemes,...(obj?.bizThemes||{})};
-  merged.data={...defaults.data,...(obj?.data||{})};
-  ['sienne','dear'].forEach(k=>{merged.data[k] = obj?.data?.[k] || seedBiz(k);
+  const merged = {
+    ...defaults,
+    ...(obj || {})
+  };
+
+  merged.bizThemes = {
+    ...defaults.bizThemes,
+    ...(obj?.bizThemes || {})
+  };
+
+  merged.data = {
+    ...defaults.data,
+    ...(obj?.data || {})
+  };
+
+  ['sienne','dear'].forEach(k=>{
+    merged.data[k] = {
+      ...seedBiz(k),
+      ...(obj?.data?.[k] || {})
+    };
+  });
+
   return merged;
 }
 function initFirebaseSync(){
