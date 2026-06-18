@@ -251,16 +251,55 @@ function confirmDeleteGoal(id){
 
   $('#confirmDeleteGoal').onclick=()=>{
     const newGoals=goals().filter(x=>x.id!==id);
-
     biz().goals=newGoals;
     biz().selectedGoal=newGoals[0]?.id||null;
+    forceSaveNow()
+      function downloadBackup(){
+  const data=JSON.stringify(state,null,2);
+  const blob=new Blob([data],{type:'application/json'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download='seo-company-backup-'+new Date().toISOString().slice(0,10)+'.json';
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
 
-    forceSaveNow();
+function restoreBackup(file){
+  if(!file)return;
+  const reader=new FileReader();
+  reader.onload=e=>{
+    try{
+      const restored=JSON.parse(e.target.result);
+      if(!confirm('백업 파일로 현재 데이터를 복원할까요? 현재 데이터는 덮어쓰기 됩니다.'))return;
+      state=mergeDefaults(restored);
+      forceSaveNow();
+      render();
+      alert('복원 완료!');
+    }catch(err){
+      alert('백업 파일을 읽을 수 없어요.');
+    }
+  };
+  reader.readAsText(file);
+}
+
+function openSettingsModal(){
+  openModal('⚙️ 데이터 관리',
+  `<p class="muted">작성한 내용을 JSON 파일로 백업하거나, 백업 파일로 복원할 수 있어요.</p>
+  <div class="modalBtns">
+    <button class="ok" id="backupBtn">백업 다운로드</button>
+    <button class="cancel" id="restoreBtn">백업 복원</button>
+  </div>
+  <input type="file" id="restoreFile" accept="application/json" class="hidden">`);
+
+  $('#backupBtn').onclick=downloadBackup;
+  $('#restoreBtn').onclick=()=>$('#restoreFile').click();
+  $('#restoreFile').onchange=e=>restoreBackup(e.target.files[0]);
+};
     closeModal();
     render();
   };
 }
-function openGoalModal(id){const g=goals().find(x=>x.id===id); if(!g)return; biz().selectedGoal=id; const months=(g.months||[]).slice().sort((a,b)=>String(b.month).localeCompare(String(a.month)));openModal(`${esc(g.icon||'🎯')} ${esc(g.title)}`,`<div class="goalRate"><div class="thinBar" style="flex:1"><i style="width:${goalRate(g)}%"></i></div><b>${goalRate(g)}%</b></div><div class="goalMeta"><span>이번달 목표 ${goalStats(g).monthCount}개</span><span>전체 목표 ${goalStats(g).totalCount}개</span></div><div class="modalBtns"><button class="cancel" id="editGoalBtn">수정</button><button class="dangerBtn" id="deleteGoalBtn">삭제</button></div><div class="cardHead" style="margin:18px 0 10px"><h3 style="font-size:17px">월 목표</h3><button class="tinyBtn" id="addMonthBtn">월 목표 추가</button></div><div class="todoList">${months.map(m=>`<button class="monthCard" data-month-open="${m.id}" data-goal-id="${g.id}"><h4>${esc(m.month)} · ${esc(m.title)}</h4><p>${(m.todos||[]).filter(t=>t.done).length}/${(m.todos||[]).length}개 완료</p><div class="goalRate"><div class="thinBar" style="flex:1"><i style="width:${rateForTodos(m.todos||[])}%"></i></div><b>${rateForTodos(m.todos||[])}%</b></div></button>`).join('')||'<p class="muted">월 목표가 없어요.</p>'}</div>`);$('#editGoalBtn').onclick=()=>editGoal(id);$('#deleteGoalBtn').onclick=()=>confirmDeleteGoal(id);$('#addMonthBtn').onclick=()=>editMonth();$$('[data-month-open]').forEach(b=>b.onclick=()=>openMonthTodos(b.dataset.monthOpen,b.dataset.goalId));}
+  function openGoalModal(id){const g=goals().find(x=>x.id===id); if(!g)return; biz().selectedGoal=id; const months=(g.months||[]).slice().sort((a,b)=>String(b.month).localeCompare(String(a.month)));openModal(`${esc(g.icon||'🎯')} ${esc(g.title)}`,`<div class="goalRate"><div class="thinBar" style="flex:1"><i style="width:${goalRate(g)}%"></i></div><b>${goalRate(g)}%</b></div><div class="goalMeta"><span>이번달 목표 ${goalStats(g).monthCount}개</span><span>전체 목표 ${goalStats(g).totalCount}개</span></div><div class="modalBtns"><button class="cancel" id="editGoalBtn">수정</button><button class="dangerBtn" id="deleteGoalBtn">삭제</button></div><div class="cardHead" style="margin:18px 0 10px"><h3 style="font-size:17px">월 목표</h3><button class="tinyBtn" id="addMonthBtn">월 목표 추가</button></div><div class="todoList">${months.map(m=>`<button class="monthCard" data-month-open="${m.id}" data-goal-id="${g.id}"><h4>${esc(m.month)} · ${esc(m.title)}</h4><p>${(m.todos||[]).filter(t=>t.done).length}/${(m.todos||[]).length}개 완료</p><div class="goalRate"><div class="thinBar" style="flex:1"><i style="width:${rateForTodos(m.todos||[])}%"></i></div><b>${rateForTodos(m.todos||[])}%</b></div></button>`).join('')||'<p class="muted">월 목표가 없어요.</p>'}</div>`);$('#editGoalBtn').onclick=()=>editGoal(id);$('#deleteGoalBtn').onclick=()=>confirmDeleteGoal(id);$('#addMonthBtn').onclick=()=>editMonth();$$('[data-month-open]').forEach(b=>b.onclick=()=>openMonthTodos(b.dataset.monthOpen,b.dataset.goalId));}
 function openMonthTodos(monthId,goalId){const g=goals().find(x=>x.id===goalId)||goal(); const m=(g.months||[]).find(x=>x.id===monthId); if(!m)return; biz().selectedGoal=g.id; biz().selectedMonth=m.month;openModal(`${esc(m.month)} · ${esc(m.title)}`,`<div class="goalRate"><div class="thinBar" style="flex:1"><i style="width:${rateForTodos(m.todos||[])}%"></i></div><b>${rateForTodos(m.todos||[])}%</b></div><div class="modalBtns"><button class="cancel" id="editMonthBtn">월 목표 수정</button><button class="ok" id="addTodoInMonth">투두 추가</button></div><div class="todoList">${(m.todos||[]).map(t=>todoRow({...t,_goal:g,_month:m})).join('')||'<p class="muted">투두가 없어요.</p>'}</div>`);$('#editMonthBtn').onclick=()=>editMonth(m.id,g.id);$('#addTodoInMonth').onclick=()=>editTodo(null);$$('[data-check-task]').forEach(b=>b.onclick=e=>{e.stopPropagation();confirmTodoCheck(b.dataset.checkTask,()=>openMonthTodos(monthId,goalId))});$$('[data-open-task]').forEach(b=>b.onclick=()=>editTodo(b.dataset.openTask));}
 function editGoal(id){const g=id?goals().find(x=>x.id===id):{icon:'🎯',title:'',desc:''};openModal(id?'목표 수정':'목표 추가',`<label>아이콘<input class="input" id="gIcon" value="${esc(g.icon||'🎯')}"></label><label>목표명<input class="input" id="gTitle" value="${esc(g.title||'')}"></label><label>설명<textarea class="textarea" id="gDesc">${esc(g.desc||'')}</textarea></label><div class="modalBtns">${id?'<button class="dangerBtn" id="delGoal">삭제</button>':''}<button class="cancel" id="cancelM">취소</button><button class="ok" id="saveGoal">저장</button></div>`);$('#cancelM').onclick=closeModal;$('#saveGoal').onclick=()=>{if(id){g.icon=$('#gIcon').value||'🎯';g.title=$('#gTitle').value||'새 목표';g.desc=$('#gDesc').value}else{const ng={id:uid(),icon:$('#gIcon').value||'🎯',title:$('#gTitle').value||'새 목표',desc:$('#gDesc').value,months:[]};goals().push(ng);biz().selectedGoal=ng.id}closeModal();render()}; if(id)$('#delGoal').onclick=()=>confirmDeleteGoal(id)}
 function editMonth(id,goalId){
@@ -456,7 +495,7 @@ function viewMemo(id){const m=biz().memos.find(x=>x.id===id);if(!m)return;const 
 function editMemo(id){const m=id?biz().memos.find(x=>x.id===id):{cat:(biz().memoCategories||['업무'])[0],title:'',text:'',star:false,date:today(),owner:state.user};if(id && (m.owner||m.author||'서')!==state.user){viewMemo(id);return}openModal(id?'메모 수정':'메모 추가',`<label>카테고리<select class="select" id="mCat">${(biz().memoCategories||[]).map(c=>`<option ${m.cat===c?'selected':''}>${esc(c)}</option>`).join('')}</select></label><label>제목<input class="input" id="mTitle" value="${esc(m.title||'')}"></label><label>내용<textarea class="textarea" id="mText">${esc(m.text||'')}</textarea></label><label style="display:flex;gap:8px;margin-top:10px"><input type="checkbox" id="mStar" ${m.star?'checked':''}> 중요 표시</label><div class="modalBtns">${id?'<button class="dangerBtn" id="delMemo">삭제</button>':''}<button class="cancel" id="cancelM">취소</button><button class="ok" id="saveMemo">저장</button></div>`);$('#cancelM').onclick=closeModal;$('#saveMemo').onclick=()=>{if(id){Object.assign(m,{cat:$('#mCat').value,title:$('#mTitle').value||'메모',text:$('#mText').value,star:$('#mStar').checked,owner:m.owner||m.author||state.user})}else{biz().memos.push({id:uid(),cat:$('#mCat').value,title:$('#mTitle').value||'메모',text:$('#mText').value,star:$('#mStar').checked,date:today(),owner:state.user})}closeModal();render()}; if(id)$('#delMemo').onclick=()=>{biz().memos=biz().memos.filter(x=>x.id!==id);closeModal();render()}}
 function editNotice(id){const n=id?notices().find(x=>x.id===id):{title:'',text:'',date:today(),author:state.user};openModal(id?'공지 수정':'공지 추가',`<label>제목<input class="input" id="nTitle" value="${esc(n.title||'')}"></label><label>내용<textarea class="textarea" id="nText">${esc(n.text||'')}</textarea></label><div class="modalBtns">${id?'<button class="dangerBtn" id="delNotice">삭제</button>':''}<button class="cancel" id="cancelM">취소</button><button class="ok" id="saveNotice">저장</button></div>`);$('#cancelM').onclick=closeModal;$('#saveNotice').onclick=()=>{if(id){Object.assign(n,{title:$('#nTitle').value||'공지',text:$('#nText').value,date:today(),author:state.user})}else{notices().push({id:uid(),title:$('#nTitle').value||'공지',text:$('#nText').value,date:today(),author:state.user})}closeModal();render()}; if(id)$('#delNotice').onclick=()=>{biz().notices=notices().filter(x=>x.id!==id);closeModal();render()}}
 function editRecord(id){const r=id?biz().records.find(x=>x.id===id):{type:'income',title:'',amount:0,date:today(),cat:'',memo:''};openModal(id?'내역 수정':'내역 추가',`<label>구분<select class="select" id="rType"><option value="income" ${r.type==='income'?'selected':''}>수입</option><option value="expense" ${r.type==='expense'?'selected':''}>지출</option></select></label><label>제목<input class="input" id="rTitle" value="${esc(r.title||'')}"></label><label>금액<input class="input" id="rAmount" type="number" value="${r.amount||0}"></label><label>날짜<input class="input" id="rDate" type="date" value="${esc(r.date||today())}"></label><label>카테고리<input class="input" id="rCat" value="${esc(r.cat||'')}"></label><label>메모<textarea class="textarea" id="rMemo" placeholder="거래 관련 메모를 적어두세요.">${esc(r.memo||'')}</textarea></label><div class="modalBtns">${id?'<button class="dangerBtn" id="delRecord">삭제</button>':''}<button class="cancel" id="cancelM">취소</button><button class="ok" id="saveRecord">저장</button></div>`);$('#cancelM').onclick=closeModal;$('#saveRecord').onclick=()=>{const val={type:$('#rType').value,title:$('#rTitle').value||'내역',amount:Number($('#rAmount').value||0),date:$('#rDate').value,cat:$('#rCat').value,memo:$('#rMemo').value}; if(id)Object.assign(r,val);else biz().records.push({id:uid(),...val});closeModal();render()}; if(id)$('#delRecord').onclick=()=>{biz().records=biz().records.filter(x=>x.id!==id);closeModal();render()}}
-function bindGlobal(){ $('#startBtn').onclick=()=>{state.started=true;$('#login').classList.add('hidden');$('#app').classList.remove('hidden');render()}; $('#logoutBtn').onclick=()=>{state.started=false;$('#app').classList.add('hidden');$('#login').classList.remove('hidden');save()}; $('#modalClose').onclick=closeModal; $('#modalBg').onclick=e=>{if(e.target.id==='modalBg')closeModal()}; $$('[data-login-user]').forEach(b=>b.onclick=()=>{state.user=b.dataset.loginUser;renderShell();save()}); $$('[data-login-biz]').forEach(b=>b.onclick=()=>{state.biz=b.dataset.loginBiz;renderShell();save()}); $$('[data-mode]').forEach(b=>b.onclick=()=>{state.mode=b.dataset.mode;state.bizThemes[state.biz]={mode:state.mode,color:state.color};applyTheme();save()}); $$('[data-color]').forEach(b=>b.onclick=()=>{state.color=b.dataset.color;state.bizThemes[state.biz]={mode:state.mode,color:state.color};applyTheme();save()}); $$('#sideNav button,#mobileNav button').forEach(b=>b.onclick=()=>{state.tab=b.dataset.tab;render()}); $$('.bizBtns button[data-biz]').forEach(b=>b.onclick=()=>{state.biz=b.dataset.biz;if(!biz().selectedGoal)biz().selectedGoal=goals()[0]?.id;render()}); $('#profileBtn').onclick=()=>{state.started=false;$('#app').classList.add('hidden');$('#login').classList.remove('hidden');renderShell()}; $('#topProfileBtn').onclick=$('#profileBtn').onclick; $('#bizPill').onclick=()=>{state.biz=state.biz==='sienne'?'dear':'sienne';render()}; }
+function bindGlobal(){ $('#startBtn').onclick=()=>{state.started=true;$('#login').classList.add('hidden');$('#app').classList.remove('hidden');render()}; $('#logoutBtn').onclick=()=>{state.started=false;$('#app').classList.add('hidden');$('#login').classList.remove('hidden');save()}; $('#modalClose').onclick=closeModal; $('#modalBg').onclick=e=>{if(e.target.id==='modalBg')closeModal()}; $$('[data-login-user]').forEach(b=>b.onclick=()=>{state.user=b.dataset.loginUser;renderShell();save()}); $$('[data-login-biz]').forEach(b=>b.onclick=()=>{state.biz=b.dataset.loginBiz;renderShell();save()}); $$('[data-mode]').forEach(b=>b.onclick=()=>{state.mode=b.dataset.mode;state.bizThemes[state.biz]={mode:state.mode,color:state.color};applyTheme();save()}); $$('[data-color]').forEach(b=>b.onclick=()=>{state.color=b.dataset.color;state.bizThemes[state.biz]={mode:state.mode,color:state.color};applyTheme();save()}); $$('#sideNav button,#mobileNav button').forEach(b=>b.onclick=()=>{state.tab=b.dataset.tab;render()}); $$('.bizBtns button[data-biz]').forEach(b=>b.onclick=()=>{state.biz=b.dataset.biz;if(!biz().selectedGoal)biz().selectedGoal=goals()[0]?.id;render()}); $('#profileBtn').onclick=openSettingsModal; $('#topProfileBtn').onclick=openSettingsModal; $('#bizPill').onclick=()=>{state.biz=state.biz==='sienne'?'dear':'sienne';render()}; }
 bindGlobal(); if(state.started){$('#login').classList.add('hidden');$('#app').classList.remove('hidden')} render(); initFirebaseSync();
 </script>
 </body>
