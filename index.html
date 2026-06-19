@@ -269,7 +269,115 @@ function schedule(){const date=biz().selectedDate||today();const days=twoWeekDay
   ${date}로 배치
 </button></div>`).join('')||'<p class="muted">배치할 투두가 없어요.</p>'}</div></div></section></div>`}
 function memoPage(){const cats=['전체',...(biz().memoCategories||[])];const personalMemos=(biz().memos||[]).filter(m=>(m.owner||m.author||'서')===state.user);const list=personalMemos.filter(m=>(biz().memoCat==='전체'||m.cat===biz().memoCat));const ns=notices().slice().sort((a,b)=>String(b.date).localeCompare(String(a.date)));return `<div class="layout one"><section class="col"><div class="noticeSplit"><div class="card"><div class="cardHead"><h3>📢 공지</h3><button class="plus" data-add-notice>+</button></div><div class="memoList">${ns.map(n=>`<button class="noticeBox" data-edit-notice="${n.id}"><b>${esc(n.title)}</b><small>${esc(n.author||'공동')} · ${esc(n.date)}</small><p>${esc(n.text)}</p></button>`).join('')||'<p class="muted">등록된 공지가 없어요.</p>'}</div></div><div class="card"><div class="cardHead"><div><h3>개인 메모</h3><p class="muted">작성한 사람만 볼 수 있어요.</p></div><div class="toolbar"><button class="tinyBtn" data-manage-memo-cats>카테고리</button><button class="plus" data-add-memo>+</button></div></div><input class="memoSearch" id="memoSearch" placeholder="내 메모 검색" value="${esc(biz().memoQuery||'')}"><div class="filterRow">${cats.map(c=>`<button class="${biz().memoCat===c?'on':''}" data-memo-cat="${esc(c)}">${esc(c)}</button>`).join('')}</div><div class="memoList" id="memoList">${list.map(m=>`<button class="memo" data-view-memo="${m.id}" data-search="${esc(`${m.title} ${m.text} ${m.cat} ${m.date}`.toLowerCase())}"><div class="memoIcon">${m.star?'⭐':'💬'}</div><div class="memoText"><b>${esc(m.title)}</b><small>${esc(m.cat)} · ${esc(m.date)}<span class="memoOwnerBadge">${esc(m.owner||m.author||state.user)}</span></small><p>${esc(m.text)}</p></div></button>`).join('')||'<p class="muted">내 메모가 없어요.</p>'}<p class="memoSearchEmpty" id="memoSearchEmpty">검색 결과가 없어요.</p></div></div></div></section></div>`}
-function sourcePage(){
+function sourcePage()
+function editSource(id)
+function manageSourceCats(){
+  const cats=biz().sourceCategories||[];
+
+  openModal('소싱처 카테고리 관리',
+  `<label>새 카테고리<input class="input" id="newSourceCat" placeholder="예: 패션잡화"></label>
+  <button class="ok" style="width:100%;margin-top:10px;padding:13px;border-radius:16px" id="addSourceCat">추가</button>
+
+  <div class="miniList">
+    ${cats.map(c=>`<div class="miniItem">
+      <input class="input" style="margin:0" value="${esc(c)}" data-source-cat-input="${esc(c)}">
+      <button data-del-source-cat="${esc(c)}">삭제</button>
+    </div>`).join('')}
+  </div>
+
+  <div class="modalBtns">
+    <button class="cancel" id="cancelM">닫기</button>
+    <button class="ok" id="saveSourceCats">수정 저장</button>
+  </div>`);
+
+  $('#cancelM').onclick=closeModal;
+
+  $('#addSourceCat').onclick=()=>{
+    const v=$('#newSourceCat').value.trim();
+    if(v&&!cats.includes(v)) cats.push(v);
+    closeModal();
+    manageSourceCats();
+    render();
+  };
+
+  $$('[data-del-source-cat]').forEach(b=>b.onclick=()=>{
+    biz().sourceCategories=cats.filter(c=>c!==b.dataset.delSourceCat);
+    biz().sources.forEach(s=>{
+      if(s.cat===b.dataset.delSourceCat) s.cat=biz().sourceCategories[0]||'식기';
+    });
+    closeModal();
+    manageSourceCats();
+    render();
+  });
+
+  $('#saveSourceCats').onclick=()=>{
+    const old=[...cats];
+    biz().sourceCategories=$$('[data-source-cat-input]').map(i=>i.value.trim()).filter(Boolean);
+
+    biz().sources.forEach(s=>{
+      const idx=old.indexOf(s.cat);
+      if(idx>=0) s.cat=biz().sourceCategories[idx]||biz().sourceCategories[0]||'식기';
+    });
+
+    closeModal();
+    save();
+    render();
+  };
+}
+  {
+  if(!biz().sources) biz().sources=[];
+  if(!biz().sourceCategories) biz().sourceCategories=['식기','잡화','리빙'];
+
+  const s=id?biz().sources.find(x=>x.id===id):{
+    title:'',
+    cat:biz().sourceCat==='전체'?biz().sourceCategories[0]:biz().sourceCat,
+    url:'',
+    memo:'',
+    date:today()
+  };
+
+  openModal(id?'소싱처 수정':'소싱처 추가',
+  `<label>카테고리<select class="select" id="sCat">
+    ${biz().sourceCategories.map(c=>`<option ${s.cat===c?'selected':''}>${esc(c)}</option>`).join('')}
+  </select></label>
+  <label>사이트명<input class="input" id="sTitle" value="${esc(s.title||'')}" placeholder="예: 1688 식기 공장"></label>
+  <label>사이트 주소<input class="input" id="sUrl" value="${esc(s.url||'')}" placeholder="https://"></label>
+  <label>메모<textarea class="textarea" id="sMemo" placeholder="가격, MOQ, 배송, 주의사항 등">${esc(s.memo||'')}</textarea></label>
+  <div class="modalBtns">
+    ${id?'<button class="dangerBtn" id="delSource">삭제</button>':''}
+    <button class="cancel" id="cancelM">취소</button>
+    <button class="ok" id="saveSource">저장</button>
+  </div>`);
+
+  $('#cancelM').onclick=closeModal;
+
+  $('#saveSource').onclick=()=>{
+    const value={
+      title:$('#sTitle').value||'소싱처',
+      cat:$('#sCat').value,
+      url:$('#sUrl').value,
+      memo:$('#sMemo').value,
+      date:today()
+    };
+
+    if(id) Object.assign(s,value);
+    else biz().sources.push({id:uid(),...value});
+
+    closeModal();
+    save();
+    render();
+  };
+
+  if(id){
+    $('#delSource').onclick=()=>{
+      biz().sources=biz().sources.filter(x=>x.id!==id);
+      closeModal();
+      save();
+      render();
+    };
+  }
+}
+  {
   if(!biz().sources) biz().sources=[];
   if(!biz().sourceCategories) biz().sourceCategories=['식기','잡화','리빙'];
   if(!biz().sourceCat) biz().sourceCat='전체';
@@ -318,7 +426,34 @@ function confirmAction(title,message,onOk){openModal(title,`<p class="muted" sty
 function confirmTodoCheck(id,after){const f=findTodo(id);if(!f)return;const who=`${userEmoji[state.user]||'◉'} ${state.user}`;confirmAction(f.t.done?'체크 해제할까요?':'완료로 체크할까요?',f.t.done?`이 투두는 ${completedLabel(f.t)||'다른 구성원'}님이 완료한 상태예요. 완료 체크를 해제할까요?`:`${who}님 완료로 기록할까요?`,()=>{if(f.t.done){f.t.done=false;f.t.completedBy=null;f.t.completedAt=null}else{f.t.done=true;f.t.completedBy=state.user;f.t.completedAt=new Date().toISOString()}if(after)after();else render()})}
 function confirmAssignDate(id){const f=findTodo(id);if(!f)return;confirmAction('오늘로 지정할까요?',`선택한 투두를 ${biz().selectedDate} 날짜로 지정할까요?`,()=>{f.t.date=biz().selectedDate;render()})}
 function applyMemoFilter(){const input=$('#memoSearch');if(!input)return;const q=(input.value||'').trim().toLowerCase();biz().memoQuery=input.value;let shown=0;$$('#memoList .memo').forEach(item=>{const ok=!q||(item.dataset.search||'').includes(q);item.classList.toggle('hidden',!ok);if(ok)shown++});const empty=$('#memoSearchEmpty');if(empty)empty.classList.toggle('show',shown===0 && $$('#memoList .memo').length>0)}
-function bindContent(){ $$('[data-tabgo]').forEach(b=>b.onclick=()=>{state.tab=b.dataset.tabgo;render()}); $$('[data-goal-actions]').forEach(b=>b.onclick=()=>openGoalModal(b.dataset.goalActions)); $$('[data-month-open]').forEach(b=>b.onclick=()=>openMonthTodos(b.dataset.monthOpen,b.dataset.goalId)); $$('[data-check-task]').forEach(b=>b.onclick=e=>{e.stopPropagation();confirmTodoCheck(b.dataset.checkTask)}); $$('[data-open-task]').forEach(b=>b.onclick=()=>editTodo(b.dataset.openTask)); $$('[data-add-todo]').forEach(b=>b.onclick=()=>editTodo(null,b.dataset.addTodoDate)); $$('[data-add-todo-date]').forEach(b=>b.onclick=()=>editTodo(null,b.dataset.addTodoDate)); $('[data-go-today]')?.addEventListener('click',()=>{
+function bindContent(){$('[data-add-source]')?.addEventListener('click',()=>editSource());
+$$('[data-edit-source]').forEach(b=>b.onclick=()=>editSource(b.dataset.editSource));
+$('[data-manage-source-cats]')?.addEventListener('click',manageSourceCats);
+
+$$('[data-source-cat]').forEach(b=>b.onclick=()=>{
+  biz().sourceCat=b.dataset.sourceCat;
+  render();
+});
+
+const ss=$('#sourceSearch');
+if(ss){
+  ss.oninput=e=>{
+    biz().sourceQuery=e.target.value;
+    const q=e.target.value.trim().toLowerCase();
+    let shown=0;
+
+    $$('#sourceList .memo').forEach(item=>{
+      const ok=!q||(item.dataset.search||'').includes(q);
+      item.classList.toggle('hidden',!ok);
+      if(ok) shown++;
+    });
+
+    $('#sourceSearchEmpty')?.classList.toggle('show',shown===0 && $$('#sourceList .memo').length>0);
+    save();
+  };
+
+  ss.dispatchEvent(new Event('input'));
+} $$('[data-tabgo]').forEach(b=>b.onclick=()=>{state.tab=b.dataset.tabgo;render()}); $$('[data-goal-actions]').forEach(b=>b.onclick=()=>openGoalModal(b.dataset.goalActions)); $$('[data-month-open]').forEach(b=>b.onclick=()=>openMonthTodos(b.dataset.monthOpen,b.dataset.goalId)); $$('[data-check-task]').forEach(b=>b.onclick=e=>{e.stopPropagation();confirmTodoCheck(b.dataset.checkTask)}); $$('[data-open-task]').forEach(b=>b.onclick=()=>editTodo(b.dataset.openTask)); $$('[data-add-todo]').forEach(b=>b.onclick=()=>editTodo(null,b.dataset.addTodoDate)); $$('[data-add-todo-date]').forEach(b=>b.onclick=()=>editTodo(null,b.dataset.addTodoDate)); $('[data-go-today]')?.addEventListener('click',()=>{
   biz().selectedDate=today();
   save();
   render();
