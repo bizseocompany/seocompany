@@ -71,9 +71,9 @@
   </div>
 </section>
 <section id="app" class="screen app hidden">
-  <aside class="side"><div class="brand" style="margin:0"><span class="brandDot"></span> SEO COMPANY OS</div><div class="profile"><div class="avatar" id="sideAvatar">🐰</div><h2 id="sideName">서님</h2><button class="chipBtn" id="profileBtn">설정 / 이용자 변경</button></div><div class="stats"><div class="stat"><span>오늘 할 일</span><b id="sideTodo">0개</b></div><div class="stat"><span>전체 달성률</span><b id="sideRate">0%</b></div></div><nav class="nav" id="sideNav"><button class="on" data-tab="home">🏠 홈</button><button data-tab="goal">🎯 목표</button><button data-tab="schedule">📅 일정</button><button data-tab="memo">💬 메모</button><button data-tab="account">💰 가계부</button></nav><div class="bizBtns"><button class="on" data-biz="sienne">시엔느 핸즈</button><button data-biz="dear">디어플랫</button><button class="logout" id="logoutBtn">↩ 로그아웃</button></div></aside>
+  <aside class="side"><div class="brand" style="margin:0"><span class="brandDot"></span> SEO COMPANY OS</div><div class="profile"><div class="avatar" id="sideAvatar">🐰</div><h2 id="sideName">서님</h2><button class="chipBtn" id="profileBtn">설정 / 이용자 변경</button></div><div class="stats"><div class="stat"><span>오늘 할 일</span><b id="sideTodo">0개</b></div><div class="stat"><span>전체 달성률</span><b id="sideRate">0%</b></div></div><nav class="nav" id="sideNav"><button class="on" data-tab="home">🏠 홈</button><button data-tab="goal">🎯 목표</button><button data-tab="schedule">📅 일정</button><button data-tab="memo">💬 메모</button><button data-tab="source">🔗 소싱처</button></nav><div class="bizBtns"><button class="on" data-biz="sienne">시엔느 핸즈</button><button data-biz="dear">디어플랫</button><button class="logout" id="logoutBtn">↩ 로그아웃</button></div></aside>
   <main class="main"><div class="topbar"><div class="greeting"><h1 id="topTitle">시엔느 핸즈</h1><p id="topSub">Goal Card OS v64 · 삭제 동기화 수정</p></div><div class="topActions"><button class="bizPill" id="bizPill">시엔느 핸즈 ▼</button><button class="topProfileBtn" id="topProfileBtn">🐰</button></div></div><div id="content"></div></main>
-  <nav class="mobileNav" id="mobileNav"><button class="on" data-tab="home"><span>🏠</span>홈</button><button data-tab="goal"><span>🎯</span>목표</button><button data-tab="schedule"><span>📅</span>일정</button><button data-tab="memo"><span>💬</span>메모</button><button data-tab="account"><span>💰</span>가계부</button></nav>
+  <nav class="mobileNav" id="mobileNav"><button class="on" data-tab="home"><span>🏠</span>홈</button><button data-tab="goal"><span>🎯</span>목표</button><button data-tab="schedule"><span>📅</span>일정</button><button data-tab="memo"><span>💬</span>메모</button><button data-tab="source"><span>🔗</span>소싱처</button></nav>
 </section>
 <div id="modalBg" class="modalBg hidden"><div class="modal"><div class="modalHead"><h3 id="modalTitle">변경</h3><button class="closeBtn" id="modalClose">×</button></div><div id="modalBody"></div></div></div>
 <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
@@ -192,6 +192,10 @@ function biz(){
   if(!b.records) b.records=[];
   if(!b.notices) b.notices=[];
   if(!b.memoCategories) b.memoCategories=['업무','아이디어','개인'];
+  if(!b.sources) b.sources=[];
+if(!b.sourceCategories) b.sourceCategories=['식기','잡화','리빙'];
+if(!b.sourceCat) b.sourceCat='전체';
+if(!b.sourceQuery) b.sourceQuery='';
   if(!b.selectedDate) b.selectedDate=today();
   if(!b.selectedMonth) b.selectedMonth=ym();
   if(!b.monthCursor) b.monthCursor=ym();
@@ -242,7 +246,7 @@ function allTodos(){
 function todayTodos(){return allTodos().filter(t=>t.date===today())} function selectedDateTodos(){return allTodos().filter(t=>t.date===biz().selectedDate)}
 function applyTheme(){const bt=state.bizThemes?.[state.biz]||{mode:state.mode,color:state.color};state.mode=bt.mode||state.mode;state.color=bt.color||state.color;document.body.dataset.mode=state.mode;document.body.dataset.color=state.color;$$('[data-mode]').forEach(b=>b.classList.toggle('on',b.dataset.mode===state.mode));$$('[data-color]').forEach(b=>b.classList.toggle('on',b.dataset.color===state.color))}
 function renderShell(){if(!biz().goals)biz().goals=[];if(!biz().notices)biz().notices=[];if(!biz().memoCategories)biz().memoCategories=['업무','아이디어','개인'];if(goals().length&&!goals().some(g=>g.id===biz().selectedGoal))biz().selectedGoal=goals()[0]?.id;if(!goals().length)biz().selectedGoal=null;applyTheme();$('#sideAvatar').textContent=userEmoji[state.user]||'🐰';$('#topProfileBtn').textContent=userEmoji[state.user]||'🐰';$('#sideName').textContent=state.user+'님';$('#topTitle').textContent=bizNames[state.biz];$('#bizPill').textContent='사업변경 ▼';$('#sideTodo').textContent=todayTodos().filter(t=>!t.done).length+'개';$('#sideRate').textContent=totalRate()+'%';$$('#sideNav button,#mobileNav button').forEach(b=>b.classList.toggle('on',b.dataset.tab===state.tab));$$('.bizBtns button[data-biz]').forEach(b=>b.classList.toggle('on',b.dataset.biz===state.biz));$$('[data-login-user]').forEach(b=>{const on=b.dataset.loginUser===state.user;b.classList.toggle('on',on);let badge=b.querySelector('.checkBadge');if(on&&!badge){badge=document.createElement('span');badge.className='checkBadge';badge.textContent='◉';b.prepend(badge)}if(!on&&badge)badge.remove()});$$('[data-login-biz]').forEach(b=>b.classList.toggle('on',b.dataset.loginBiz===state.biz))}
-function render(){renderShell();const map={home,goal:goalPage,schedule,memo:memoPage,account};$('#content').innerHTML=(map[state.tab]||home)();bindContent();save()}
+function render(){renderShell();const map={home,goal:goalPage,schedule,memo:memoPage,source:sourcePage};$('#content').innerHTML=(map[state.tab]||home)();bindContent();save()}
 function todoRow(t){const stamp=t.done?`<span class="completionStamp">${esc(completedLabel(t))}</span>`:'';return `<div class="todoRow ${t.done?'doneRow':''}" data-task="${t.id}"><button class="check ${t.done?'done':''}" data-check-task="${t.id}"></button><div class="todoText" data-open-task="${t.id}"><b>${esc(t.text)}</b><small>${esc(t._goal?.title||'목표')} · ${esc(t._month?.title||'월 목표')} · ${esc(t.date||'날짜 미정')}</small>${stamp}</div></div>`}
 function goalCard(g){const st=goalStats(g);return `<button class="goalCard ${goal()?.id===g.id?'on':''}" data-goal-actions="${g.id}"><div class="goalIcon">${esc(g.icon||'🎯')}</div><h4>${esc(g.title)}</h4><p>${esc(g.desc||'')}</p><div class="goalRate"><div class="thinBar" style="flex:1"><i style="width:${goalRate(g)}%"></i></div><b>${goalRate(g)}%</b></div><div class="goalMeta"><span>이번달 목표 ${st.monthCount}개</span><span>전체 목표 ${st.totalCount}개</span><span>투두 ${st.todoCount}개</span></div></button>`}
 function monthCard(m,g){const r=rateForTodos(m.todos||[]);return `<button class="monthCard ${biz().selectedMonth===m.month?'on':''}" data-month="${m.month}"><h4>${Number(m.month.slice(5,7))}월 · ${esc(m.title)}</h4><p>${(m.todos||[]).filter(t=>t.done).length}/${(m.todos||[]).length}개 완료</p><div class="goalRate"><div class="thinBar" style="flex:1"><i style="width:${r}%"></i></div><b>${r}%</b></div></button>`}
@@ -265,7 +269,48 @@ function schedule(){const date=biz().selectedDate||today();const days=twoWeekDay
   ${date}로 배치
 </button></div>`).join('')||'<p class="muted">배치할 투두가 없어요.</p>'}</div></div></section></div>`}
 function memoPage(){const cats=['전체',...(biz().memoCategories||[])];const personalMemos=(biz().memos||[]).filter(m=>(m.owner||m.author||'서')===state.user);const list=personalMemos.filter(m=>(biz().memoCat==='전체'||m.cat===biz().memoCat));const ns=notices().slice().sort((a,b)=>String(b.date).localeCompare(String(a.date)));return `<div class="layout one"><section class="col"><div class="noticeSplit"><div class="card"><div class="cardHead"><h3>📢 공지</h3><button class="plus" data-add-notice>+</button></div><div class="memoList">${ns.map(n=>`<button class="noticeBox" data-edit-notice="${n.id}"><b>${esc(n.title)}</b><small>${esc(n.author||'공동')} · ${esc(n.date)}</small><p>${esc(n.text)}</p></button>`).join('')||'<p class="muted">등록된 공지가 없어요.</p>'}</div></div><div class="card"><div class="cardHead"><div><h3>개인 메모</h3><p class="muted">작성한 사람만 볼 수 있어요.</p></div><div class="toolbar"><button class="tinyBtn" data-manage-memo-cats>카테고리</button><button class="plus" data-add-memo>+</button></div></div><input class="memoSearch" id="memoSearch" placeholder="내 메모 검색" value="${esc(biz().memoQuery||'')}"><div class="filterRow">${cats.map(c=>`<button class="${biz().memoCat===c?'on':''}" data-memo-cat="${esc(c)}">${esc(c)}</button>`).join('')}</div><div class="memoList" id="memoList">${list.map(m=>`<button class="memo" data-view-memo="${m.id}" data-search="${esc(`${m.title} ${m.text} ${m.cat} ${m.date}`.toLowerCase())}"><div class="memoIcon">${m.star?'⭐':'💬'}</div><div class="memoText"><b>${esc(m.title)}</b><small>${esc(m.cat)} · ${esc(m.date)}<span class="memoOwnerBadge">${esc(m.owner||m.author||state.user)}</span></small><p>${esc(m.text)}</p></div></button>`).join('')||'<p class="muted">내 메모가 없어요.</p>'}<p class="memoSearchEmpty" id="memoSearchEmpty">검색 결과가 없어요.</p></div></div></div></section></div>`}
-function account(){if(!biz().accountFilter)biz().accountFilter='all';if(!biz().accountDate)biz().accountDate=today();const records=biz().records||[];const income=records.filter(r=>r.type==='income').reduce((a,r)=>a+Number(r.amount||0),0),expense=records.filter(r=>r.type==='expense').reduce((a,r)=>a+Number(r.amount||0),0),profit=income-expense;let list=records.slice().sort((a,b)=>String(b.date).localeCompare(String(a.date)));if(biz().accountFilter==='today')list=list.filter(r=>r.date===today());if(biz().accountFilter==='month')list=list.filter(r=>String(r.date||'').slice(0,7)===ym());if(biz().accountFilter==='date')list=list.filter(r=>r.date===biz().accountDate);const label=biz().accountFilter==='all'?'전체':biz().accountFilter==='today'?'오늘':biz().accountFilter==='month'?'이번달':biz().accountDate;return `<div class="layout one"><section class="col"><div class="card"><div class="cardHead"><div><h3>가계부</h3><p class="muted">날짜별 필터와 메모를 함께 확인할 수 있어요.</p></div><button class="plus" data-add-record>+</button></div><div class="summaryCompact"><div class="summaryBox"><span>수입</span><b class="income">+${fmt(income)}</b></div><div class="summaryBox"><span>지출</span><b class="expense">-${fmt(expense)}</b></div><div class="summaryBox"><span>순이익</span><b class="profit">${fmt(profit)}</b></div></div></div><div class="card"><div class="cardHead"><h3>거래내역</h3><span class="chipBtn">${label} · ${list.length}건</span></div><div class="accountFilters"><button class="${biz().accountFilter==='all'?'on':''}" data-account-filter="all">전체</button><button class="${biz().accountFilter==='today'?'on':''}" data-account-filter="today">오늘</button><button class="${biz().accountFilter==='month'?'on':''}" data-account-filter="month">이번달</button><button class="${biz().accountFilter==='date'?'on':''}" data-account-filter="date">날짜별</button><input type="date" id="accountDate" value="${esc(biz().accountDate||today())}"></div><div class="todoList">${list.map(r=>{const category=r.cat||(r.type==='income'?'매출':'비용');const shortDate=String(r.date||'').slice(5).replace('-', '.');return `<button class="recordRow ${r.type==='income'?'incomeRow':'expenseRow'}" data-edit-record="${r.id}"><span class="recordDate">${esc(shortDate||r.date||'날짜 없음')}<span class="categoryBadge">${esc(category)}</span></span><div class="recordInfo"><b>${esc(r.title)}</b>${r.memo?`<span class="recordMemo">${esc(r.memo)}</span>`:''}</div><span class="money ${r.type==='income'?'income':'expense'}">${r.type==='income'?'+':'-'}${fmt(r.amount)}</span></button>`}).join('')||'<p class="muted">내역이 없어요.</p>'}</div></div></section></div>`}
+function sourcePage(){
+  if(!biz().sources) biz().sources=[];
+  if(!biz().sourceCategories) biz().sourceCategories=['식기','잡화','리빙'];
+  if(!biz().sourceCat) biz().sourceCat='전체';
+  if(!biz().sourceQuery) biz().sourceQuery='';
+
+  const cats=['전체',...biz().sourceCategories];
+
+  const list=biz().sources
+    .filter(s=>biz().sourceCat==='전체'||s.cat===biz().sourceCat)
+    .slice()
+    .sort((a,b)=>String(b.date).localeCompare(String(a.date)));
+
+  return `<div class="layout one"><section class="col"><div class="card">
+    <div class="cardHead">
+      <div><h3>소싱처 링크</h3><p class="muted">스마트스토어 카테고리별 소싱처를 저장해요.</p></div>
+      <div class="toolbar">
+        <button class="tinyBtn" data-manage-source-cats>카테고리</button>
+        <button class="plus" data-add-source>+</button>
+      </div>
+    </div>
+
+    <input class="memoSearch" id="sourceSearch" placeholder="사이트명, 주소, 메모 검색" value="${esc(biz().sourceQuery||'')}">
+
+    <div class="filterRow">
+      ${cats.map(c=>`<button class="${biz().sourceCat===c?'on':''}" data-source-cat="${esc(c)}">${esc(c)}</button>`).join('')}
+    </div>
+
+    <div class="memoList" id="sourceList">
+      ${list.map(s=>`<button class="memo" data-edit-source="${s.id}" data-search="${esc(`${s.title} ${s.url} ${s.memo} ${s.cat}`.toLowerCase())}">
+        <div class="memoIcon">🔗</div>
+        <div class="memoText">
+          <b>${esc(s.title||'사이트명 없음')}</b>
+          <small>${esc(s.cat||'카테고리 없음')} · ${esc(s.date||today())}</small>
+          <p>${esc(s.url||'주소 없음')}</p>
+          ${s.memo?`<p>${esc(s.memo)}</p>`:''}
+        </div>
+      </button>`).join('')||'<p class="muted">저장된 소싱처가 없어요.</p>'}
+      <p class="memoSearchEmpty" id="sourceSearchEmpty">검색 결과가 없어요.</p>
+    </div>
+  </div></section></div>`;
+}
 function findTodo(id){for(const g of goals())for(const m of g.months||[])for(const t of m.todos||[])if(t.id===id)return {g,m,t};return null}
 function openModal(title,html){$('#modalTitle').textContent=title;$('#modalBody').innerHTML=html;$('#modalBg').classList.remove('hidden')}
 function closeModal(){$('#modalBg').classList.add('hidden')}
