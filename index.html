@@ -61,6 +61,27 @@
 /* PC sidebar stats visibility fix */
 @media(min-width:1101px){.side .stats{display:grid!important;visibility:visible!important;opacity:1!important;min-height:86px}.side .stat{display:block!important}.side .stat span,.side .stat b{display:block!important}}
 
+
+
+/* source tab mobile fix */
+.sourceCard{overflow:visible}.sourceHead{align-items:flex-start}.sourceToolbar{flex:0 0 auto}.sourceItem{align-items:flex-start}.sourceText{min-width:0;width:100%}.sourceText b,.sourceText small,.sourceText p{word-break:break-word;overflow-wrap:anywhere}.sourceUrl{color:var(--accent)!important;font-weight:650}
+@media(max-width:640px){
+  .sourceCard{padding:18px 14px;border-radius:24px;width:100%;max-width:100%;overflow:hidden}
+  .sourceHead{display:grid;grid-template-columns:1fr;gap:12px;margin-bottom:14px}
+  .sourceToolbar{width:100%;display:grid;grid-template-columns:1fr 46px;gap:8px}
+  .sourceToolbar .tinyBtn{width:100%;padding:12px 10px;border-radius:16px}
+  .sourceToolbar .plus{width:46px;height:46px;min-width:46px}
+  #sourceSearch{width:100%;margin-bottom:12px;padding:14px 13px;border-radius:17px}
+  .sourceFilters{margin:4px -2px 14px;padding:0 2px 6px;max-width:100%;overflow-x:auto}
+  .sourceList{gap:10px;width:100%}
+  .sourceItem{width:100%;padding:13px 12px;border-radius:19px;gap:10px}
+  .sourceItem .memoIcon{width:34px;height:34px;flex-basis:34px;font-size:18px}
+  .sourceText b{font-size:14.5px;white-space:normal}
+  .sourceText p{font-size:12.8px;line-height:1.45;margin-top:6px}
+  .modal{width:calc(100vw - 24px);max-height:86vh;padding:20px;border-radius:24px}
+  .modalBtns{display:grid;grid-template-columns:1fr;gap:8px}
+}
+
 </style>
 </head>
 <body data-mode="light" data-color="pink" class="on">
@@ -269,10 +290,108 @@ function schedule(){const date=biz().selectedDate||today();const days=twoWeekDay
   ${date}로 배치
 </button></div>`).join('')||'<p class="muted">배치할 투두가 없어요.</p>'}</div></div></section></div>`}
 function memoPage(){const cats=['전체',...(biz().memoCategories||[])];const personalMemos=(biz().memos||[]).filter(m=>(m.owner||m.author||'서')===state.user);const list=personalMemos.filter(m=>(biz().memoCat==='전체'||m.cat===biz().memoCat));const ns=notices().slice().sort((a,b)=>String(b.date).localeCompare(String(a.date)));return `<div class="layout one"><section class="col"><div class="noticeSplit"><div class="card"><div class="cardHead"><h3>📢 공지</h3><button class="plus" data-add-notice>+</button></div><div class="memoList">${ns.map(n=>`<button class="noticeBox" data-edit-notice="${n.id}"><b>${esc(n.title)}</b><small>${esc(n.author||'공동')} · ${esc(n.date)}</small><p>${esc(n.text)}</p></button>`).join('')||'<p class="muted">등록된 공지가 없어요.</p>'}</div></div><div class="card"><div class="cardHead"><div><h3>개인 메모</h3><p class="muted">작성한 사람만 볼 수 있어요.</p></div><div class="toolbar"><button class="tinyBtn" data-manage-memo-cats>카테고리</button><button class="plus" data-add-memo>+</button></div></div><input class="memoSearch" id="memoSearch" placeholder="내 메모 검색" value="${esc(biz().memoQuery||'')}"><div class="filterRow">${cats.map(c=>`<button class="${biz().memoCat===c?'on':''}" data-memo-cat="${esc(c)}">${esc(c)}</button>`).join('')}</div><div class="memoList" id="memoList">${list.map(m=>`<button class="memo" data-view-memo="${m.id}" data-search="${esc(`${m.title} ${m.text} ${m.cat} ${m.date}`.toLowerCase())}"><div class="memoIcon">${m.star?'⭐':'💬'}</div><div class="memoText"><b>${esc(m.title)}</b><small>${esc(m.cat)} · ${esc(m.date)}<span class="memoOwnerBadge">${esc(m.owner||m.author||state.user)}</span></small><p>${esc(m.text)}</p></div></button>`).join('')||'<p class="muted">내 메모가 없어요.</p>'}<p class="memoSearchEmpty" id="memoSearchEmpty">검색 결과가 없어요.</p></div></div></div></section></div>`}
-function sourcePage()
-function editSource(id)
+function sourcePage(){
+  if(!biz().sources) biz().sources=[];
+  if(!biz().sourceCategories) biz().sourceCategories=['식기','잡화','리빙'];
+  if(!biz().sourceCat) biz().sourceCat='전체';
+  if(!biz().sourceQuery) biz().sourceQuery='';
+
+  const cats=['전체',...biz().sourceCategories];
+  const list=biz().sources
+    .filter(s=>biz().sourceCat==='전체'||s.cat===biz().sourceCat)
+    .slice()
+    .sort((a,b)=>String(b.date).localeCompare(String(a.date)));
+
+  return `<div class="layout one sourceWrap"><section class="col"><div class="card sourceCard">
+    <div class="cardHead sourceHead">
+      <div><h3>소싱처 링크</h3><p class="muted">스마트스토어 카테고리별 소싱처를 저장해요.</p></div>
+      <div class="toolbar sourceToolbar">
+        <button class="tinyBtn" data-manage-source-cats>카테고리</button>
+        <button class="plus" data-add-source>+</button>
+      </div>
+    </div>
+
+    <input class="memoSearch" id="sourceSearch" placeholder="사이트명, 주소, 메모 검색" value="${esc(biz().sourceQuery||'')}">
+
+    <div class="filterRow sourceFilters">
+      ${cats.map(c=>`<button class="${biz().sourceCat===c?'on':''}" data-source-cat="${esc(c)}">${esc(c)}</button>`).join('')}
+    </div>
+
+    <div class="memoList sourceList" id="sourceList">
+      ${list.map(s=>`<button class="memo sourceItem" data-edit-source="${s.id}" data-search="${esc(`${s.title} ${s.url} ${s.memo} ${s.cat}`.toLowerCase())}">
+        <div class="memoIcon">🔗</div>
+        <div class="memoText sourceText">
+          <b>${esc(s.title||'사이트명 없음')}</b>
+          <small>${esc(s.cat||'카테고리 없음')} · ${esc(s.date||today())}</small>
+          <p class="sourceUrl">${esc(s.url||'주소 없음')}</p>
+          ${s.memo?`<p>${esc(s.memo)}</p>`:''}
+        </div>
+      </button>`).join('')||'<p class="muted">저장된 소싱처가 없어요.</p>'}
+      <p class="memoSearchEmpty" id="sourceSearchEmpty">검색 결과가 없어요.</p>
+    </div>
+  </div></section></div>`;
+}
+
+function editSource(id){
+  if(!biz().sources) biz().sources=[];
+  if(!biz().sourceCategories) biz().sourceCategories=['식기','잡화','리빙'];
+
+  const s=id?biz().sources.find(x=>x.id===id):{
+    title:'',
+    cat:biz().sourceCat==='전체'?biz().sourceCategories[0]:biz().sourceCat,
+    url:'',
+    memo:'',
+    date:today()
+  };
+
+  if(id&&!s)return;
+
+  openModal(id?'소싱처 수정':'소싱처 추가',
+  `<label>카테고리<select class="select" id="sCat">
+    ${biz().sourceCategories.map(c=>`<option ${s.cat===c?'selected':''}>${esc(c)}</option>`).join('')}
+  </select></label>
+  <label>사이트명<input class="input" id="sTitle" value="${esc(s.title||'')}" placeholder="예: 1688 식기 공장"></label>
+  <label>사이트 주소<input class="input" id="sUrl" value="${esc(s.url||'')}" placeholder="https://"></label>
+  <label>메모<textarea class="textarea" id="sMemo" placeholder="가격, MOQ, 배송, 주의사항 등">${esc(s.memo||'')}</textarea></label>
+  <div class="modalBtns">
+    ${id?'<button class="dangerBtn" id="delSource">삭제</button>':''}
+    <button class="cancel" id="cancelM">취소</button>
+    <button class="ok" id="saveSource">저장</button>
+  </div>`);
+
+  $('#cancelM').onclick=closeModal;
+
+  $('#saveSource').onclick=()=>{
+    const value={
+      title:$('#sTitle').value.trim()||'소싱처',
+      cat:$('#sCat').value,
+      url:$('#sUrl').value.trim(),
+      memo:$('#sMemo').value.trim(),
+      date:today()
+    };
+
+    if(id) Object.assign(s,value);
+    else biz().sources.push({id:uid(),...value});
+
+    closeModal();
+    save();
+    render();
+  };
+
+  if(id){
+    $('#delSource').onclick=()=>{
+      biz().sources=biz().sources.filter(x=>x.id!==id);
+      closeModal();
+      save();
+      render();
+    };
+  }
+}
+
 function manageSourceCats(){
-  const cats=biz().sourceCategories||[];
+  if(!biz().sourceCategories) biz().sourceCategories=['식기','잡화','리빙'];
+  if(!biz().sources) biz().sources=[];
+  const cats=biz().sourceCategories;
 
   openModal('소싱처 카테고리 관리',
   `<label>새 카테고리<input class="input" id="newSourceCat" placeholder="예: 패션잡화"></label>
@@ -295,129 +414,38 @@ function manageSourceCats(){
   $('#addSourceCat').onclick=()=>{
     const v=$('#newSourceCat').value.trim();
     if(v&&!cats.includes(v)) cats.push(v);
+    save();
     closeModal();
     manageSourceCats();
-    render();
   };
 
   $$('[data-del-source-cat]').forEach(b=>b.onclick=()=>{
-    biz().sourceCategories=cats.filter(c=>c!==b.dataset.delSourceCat);
+    const target=b.dataset.delSourceCat;
+    biz().sourceCategories=cats.filter(c=>c!==target);
+    if(!biz().sourceCategories.length) biz().sourceCategories=['식기'];
     biz().sources.forEach(s=>{
-      if(s.cat===b.dataset.delSourceCat) s.cat=biz().sourceCategories[0]||'식기';
+      if(s.cat===target) s.cat=biz().sourceCategories[0];
     });
+    if(biz().sourceCat===target) biz().sourceCat='전체';
+    save();
     closeModal();
     manageSourceCats();
-    render();
   });
 
   $('#saveSourceCats').onclick=()=>{
     const old=[...cats];
-    biz().sourceCategories=$$('[data-source-cat-input]').map(i=>i.value.trim()).filter(Boolean);
+    const next=$$('[data-source-cat-input]').map(i=>i.value.trim()).filter(Boolean);
+    biz().sourceCategories=next.length?next:['식기'];
 
     biz().sources.forEach(s=>{
       const idx=old.indexOf(s.cat);
-      if(idx>=0) s.cat=biz().sourceCategories[idx]||biz().sourceCategories[0]||'식기';
+      if(idx>=0) s.cat=biz().sourceCategories[idx]||biz().sourceCategories[0];
     });
 
     closeModal();
     save();
     render();
   };
-}
-  {
-  if(!biz().sources) biz().sources=[];
-  if(!biz().sourceCategories) biz().sourceCategories=['식기','잡화','리빙'];
-
-  const s=id?biz().sources.find(x=>x.id===id):{
-    title:'',
-    cat:biz().sourceCat==='전체'?biz().sourceCategories[0]:biz().sourceCat,
-    url:'',
-    memo:'',
-    date:today()
-  };
-
-  openModal(id?'소싱처 수정':'소싱처 추가',
-  `<label>카테고리<select class="select" id="sCat">
-    ${biz().sourceCategories.map(c=>`<option ${s.cat===c?'selected':''}>${esc(c)}</option>`).join('')}
-  </select></label>
-  <label>사이트명<input class="input" id="sTitle" value="${esc(s.title||'')}" placeholder="예: 1688 식기 공장"></label>
-  <label>사이트 주소<input class="input" id="sUrl" value="${esc(s.url||'')}" placeholder="https://"></label>
-  <label>메모<textarea class="textarea" id="sMemo" placeholder="가격, MOQ, 배송, 주의사항 등">${esc(s.memo||'')}</textarea></label>
-  <div class="modalBtns">
-    ${id?'<button class="dangerBtn" id="delSource">삭제</button>':''}
-    <button class="cancel" id="cancelM">취소</button>
-    <button class="ok" id="saveSource">저장</button>
-  </div>`);
-
-  $('#cancelM').onclick=closeModal;
-
-  $('#saveSource').onclick=()=>{
-    const value={
-      title:$('#sTitle').value||'소싱처',
-      cat:$('#sCat').value,
-      url:$('#sUrl').value,
-      memo:$('#sMemo').value,
-      date:today()
-    };
-
-    if(id) Object.assign(s,value);
-    else biz().sources.push({id:uid(),...value});
-
-    closeModal();
-    save();
-    render();
-  };
-
-  if(id){
-    $('#delSource').onclick=()=>{
-      biz().sources=biz().sources.filter(x=>x.id!==id);
-      closeModal();
-      save();
-      render();
-    };
-  }
-}
-  {
-  if(!biz().sources) biz().sources=[];
-  if(!biz().sourceCategories) biz().sourceCategories=['식기','잡화','리빙'];
-  if(!biz().sourceCat) biz().sourceCat='전체';
-  if(!biz().sourceQuery) biz().sourceQuery='';
-
-  const cats=['전체',...biz().sourceCategories];
-
-  const list=biz().sources
-    .filter(s=>biz().sourceCat==='전체'||s.cat===biz().sourceCat)
-    .slice()
-    .sort((a,b)=>String(b.date).localeCompare(String(a.date)));
-
-  return `<div class="layout one"><section class="col"><div class="card">
-    <div class="cardHead">
-      <div><h3>소싱처 링크</h3><p class="muted">스마트스토어 카테고리별 소싱처를 저장해요.</p></div>
-      <div class="toolbar">
-        <button class="tinyBtn" data-manage-source-cats>카테고리</button>
-        <button class="plus" data-add-source>+</button>
-      </div>
-    </div>
-
-    <input class="memoSearch" id="sourceSearch" placeholder="사이트명, 주소, 메모 검색" value="${esc(biz().sourceQuery||'')}">
-
-    <div class="filterRow">
-      ${cats.map(c=>`<button class="${biz().sourceCat===c?'on':''}" data-source-cat="${esc(c)}">${esc(c)}</button>`).join('')}
-    </div>
-
-    <div class="memoList" id="sourceList">
-      ${list.map(s=>`<button class="memo" data-edit-source="${s.id}" data-search="${esc(`${s.title} ${s.url} ${s.memo} ${s.cat}`.toLowerCase())}">
-        <div class="memoIcon">🔗</div>
-        <div class="memoText">
-          <b>${esc(s.title||'사이트명 없음')}</b>
-          <small>${esc(s.cat||'카테고리 없음')} · ${esc(s.date||today())}</small>
-          <p>${esc(s.url||'주소 없음')}</p>
-          ${s.memo?`<p>${esc(s.memo)}</p>`:''}
-        </div>
-      </button>`).join('')||'<p class="muted">저장된 소싱처가 없어요.</p>'}
-      <p class="memoSearchEmpty" id="sourceSearchEmpty">검색 결과가 없어요.</p>
-    </div>
-  </div></section></div>`;
 }
 function findTodo(id){for(const g of goals())for(const m of g.months||[])for(const t of m.todos||[])if(t.id===id)return {g,m,t};return null}
 function openModal(title,html){$('#modalTitle').textContent=title;$('#modalBody').innerHTML=html;$('#modalBg').classList.remove('hidden')}
