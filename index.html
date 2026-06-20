@@ -82,6 +82,15 @@
   .modalBtns{display:grid;grid-template-columns:1fr;gap:8px}
 }
 
+
+/* goal detail update */
+.monthDetailCard{background:var(--panel2);border:1px solid var(--line);border-radius:24px;padding:16px;margin-top:12px}
+.monthDetailHead{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;margin-bottom:12px}
+.monthDetailHead h4{margin:0;font-size:16px;font-weight:800}.monthDetailHead small{display:block;color:var(--muted);font-size:12.5px;margin-top:3px}
+.todoGroupTitle{font-size:12px;color:var(--sub);font-weight:800;margin:12px 0 8px}.todoGroupTitle.done{color:var(--accent)}
+.modal .monthDetailCard .todoRow{background:var(--panel);box-shadow:none}
+.dateHelp{display:block;color:var(--muted);font-size:12px;margin-top:6px;line-height:1.45}
+
 </style>
 </head>
 <body data-mode="light" data-color="pink" class="on">
@@ -121,7 +130,7 @@ const esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&
 const fmt=n=>(Number(n)||0).toLocaleString('ko-KR')+'원';
 const userEmoji={서:'🐰',희도:'🐻'}, bizNames={sienne:'시엔느 핸즈',dear:'디어플랫'};
 function completedLabel(t){return t?.completedBy?`${userEmoji[t.completedBy]||'◉'} ${t.completedBy}`:(t?.done?'완료':'')}
-function newTodo(text,date=today(),owner='서'){return {id:uid(),text,done:false,completedBy:null,completedAt:null,date,owner,important:false}}
+function newTodo(text,date='',owner='서'){return {id:uid(),text,done:false,completedBy:null,completedAt:null,date,owner,important:false}}
 function seedBiz(name){return {selectedGoal:null,selectedMonth:ym(),selectedDate:today(),memoCat:'전체',memoQuery:'',memoCategories:['업무','아이디어','개인'],accountFilter:'all',monthCursor:ym(),goals:[],memos:[],records:[],notices:[]}}
 
 const defaults={started:false,user:'서',biz:'sienne',tab:'home',mode:'light',color:'pink',bizThemes:{sienne:{mode:'light',color:'pink'},dear:{mode:'light',color:'purple'}},data:{sienne:seedBiz('sienne'),dear:seedBiz('dear')}};
@@ -596,8 +605,61 @@ function openSettingsModal(){
   $('#restoreBtn').onclick=()=>$('#restoreFile').click();
   $('#restoreFile').onchange=e=>restoreBackup(e.target.files[0]);
 }
-function openGoalModal(id){const g=goals().find(x=>x.id===id); if(!g)return; biz().selectedGoal=id; const months=(g.months||[]).slice().sort((a,b)=>String(b.month).localeCompare(String(a.month)));openModal(`${esc(g.icon||'🎯')} ${esc(g.title)}`,`<div class="goalRate"><div class="thinBar" style="flex:1"><i style="width:${goalRate(g)}%"></i></div><b>${goalRate(g)}%</b></div><div class="goalMeta"><span>이번달 목표 ${goalStats(g).monthCount}개</span><span>전체 목표 ${goalStats(g).totalCount}개</span></div><div class="modalBtns"><button class="cancel" id="editGoalBtn">수정</button><button class="dangerBtn" id="deleteGoalBtn">삭제</button></div><div class="cardHead" style="margin:18px 0 10px"><h3 style="font-size:17px">월 목표</h3><button class="tinyBtn" id="addMonthBtn">월 목표 추가</button></div><div class="todoList">${months.map(m=>`<button class="monthCard" data-month-open="${m.id}" data-goal-id="${g.id}"><h4>${esc(m.month)} · ${esc(m.title)}</h4><p>${(m.todos||[]).filter(t=>t.done).length}/${(m.todos||[]).length}개 완료</p><div class="goalRate"><div class="thinBar" style="flex:1"><i style="width:${rateForTodos(m.todos||[])}%"></i></div><b>${rateForTodos(m.todos||[])}%</b></div></button>`).join('')||'<p class="muted">월 목표가 없어요.</p>'}</div>`);$('#editGoalBtn').onclick=()=>editGoal(id);$('#deleteGoalBtn').onclick=()=>confirmDeleteGoal(id);$('#addMonthBtn').onclick=()=>editMonth();$$('[data-month-open]').forEach(b=>b.onclick=()=>openMonthTodos(b.dataset.monthOpen,b.dataset.goalId));}
-function openMonthTodos(monthId,goalId){const g=goals().find(x=>x.id===goalId)||goal(); const m=(g.months||[]).find(x=>x.id===monthId); if(!m)return; biz().selectedGoal=g.id; biz().selectedMonth=m.month;openModal(`${esc(m.month)} · ${esc(m.title)}`,`<div class="goalRate"><div class="thinBar" style="flex:1"><i style="width:${rateForTodos(m.todos||[])}%"></i></div><b>${rateForTodos(m.todos||[])}%</b></div><div class="modalBtns"><button class="cancel" id="editMonthBtn">월 목표 수정</button><button class="ok" id="addTodoInMonth">투두 추가</button></div><div class="todoList">${(m.todos||[]).map(t=>todoRow({...t,_goal:g,_month:m})).join('')||'<p class="muted">투두가 없어요.</p>'}</div>`);$('#editMonthBtn').onclick=()=>editMonth(m.id,g.id);$('#addTodoInMonth').onclick=()=>editTodo(null);$$('[data-check-task]').forEach(b=>b.onclick=e=>{e.stopPropagation();confirmTodoCheck(b.dataset.checkTask,()=>openMonthTodos(monthId,goalId))});$$('[data-open-task]').forEach(b=>b.onclick=()=>editTodo(b.dataset.openTask));}
+function renderTodoGroups(list,g,m){
+  const active=(list||[]).filter(t=>!t.done);
+  const done=(list||[]).filter(t=>t.done);
+  const activeHtml=active.map(t=>todoRow({...t,_goal:g,_month:m})).join('')||'<p class="muted">진행중인 투두가 없어요.</p>';
+  const doneHtml=done.map(t=>todoRow({...t,_goal:g,_month:m})).join('')||'<p class="muted">완료된 체크리스트가 없어요.</p>';
+  return `<div class="todoGroupTitle">진행중 체크리스트</div><div class="todoList">${activeHtml}</div><div class="todoGroupTitle done">완료된 체크리스트</div><div class="todoList">${doneHtml}</div>`;
+}
+function bindModalTodoHandlers(refresh){
+  $$('[data-check-task]').forEach(b=>b.onclick=e=>{e.stopPropagation();confirmTodoCheck(b.dataset.checkTask,refresh)});
+  $$('[data-open-task]').forEach(b=>b.onclick=()=>editTodo(b.dataset.openTask));
+}
+function openGoalModal(id){
+  const g=goals().find(x=>x.id===id);
+  if(!g)return;
+  biz().selectedGoal=id;
+  const months=(g.months||[]).slice().sort((a,b)=>String(a.month).localeCompare(String(b.month)));
+  const detail=months.map(m=>{
+    const total=(m.todos||[]).length;
+    const done=(m.todos||[]).filter(t=>t.done).length;
+    return `<div class="monthDetailCard">
+      <div class="monthDetailHead">
+        <div><h4>${esc(m.month)} · ${esc(m.title)}</h4><small>${done}/${total}개 완료 · ${rateForTodos(m.todos||[])}%</small></div>
+        <button class="tinyBtn" data-month-open="${m.id}" data-goal-id="${g.id}">월 목표 수정/추가</button>
+      </div>
+      <div class="goalRate"><div class="thinBar" style="flex:1"><i style="width:${rateForTodos(m.todos||[])}%"></i></div><b>${rateForTodos(m.todos||[])}%</b></div>
+      ${renderTodoGroups(m.todos||[],g,m)}
+    </div>`;
+  }).join('')||'<p class="muted">월 목표가 없어요.</p>';
+
+  openModal(`${esc(g.icon||'🎯')} ${esc(g.title)}`,
+  `<div class="goalRate"><div class="thinBar" style="flex:1"><i style="width:${goalRate(g)}%"></i></div><b>${goalRate(g)}%</b></div>
+  <div class="goalMeta"><span>이번달 목표 ${goalStats(g).monthCount}개</span><span>전체 목표 ${goalStats(g).totalCount}개</span><span>투두 ${goalStats(g).todoCount}개</span></div>
+  <div class="modalBtns"><button class="cancel" id="editGoalBtn">목표 수정</button><button class="dangerBtn" id="deleteGoalBtn">삭제</button></div>
+  <div class="cardHead" style="margin:18px 0 10px"><div><h3 style="font-size:17px">월 목표 / 투두리스트</h3><p class="muted">빠른 월부터 보이고, 완료된 체크리스트도 함께 보여요.</p></div><button class="tinyBtn" id="addMonthBtn">월 목표 추가</button></div>
+  ${detail}`);
+  $('#editGoalBtn').onclick=()=>editGoal(id);
+  $('#deleteGoalBtn').onclick=()=>confirmDeleteGoal(id);
+  $('#addMonthBtn').onclick=()=>editMonth(null,g.id);
+  $$('[data-month-open]').forEach(b=>b.onclick=()=>openMonthTodos(b.dataset.monthOpen,b.dataset.goalId));
+  bindModalTodoHandlers(()=>openGoalModal(id));
+}
+function openMonthTodos(monthId,goalId){
+  const g=goals().find(x=>x.id===goalId)||goal();
+  const m=(g.months||[]).find(x=>x.id===monthId);
+  if(!m)return;
+  biz().selectedGoal=g.id;
+  biz().selectedMonth=m.month;
+  openModal(`${esc(m.month)} · ${esc(m.title)}`,
+  `<div class="goalRate"><div class="thinBar" style="flex:1"><i style="width:${rateForTodos(m.todos||[])}%"></i></div><b>${rateForTodos(m.todos||[])}%</b></div>
+  <div class="modalBtns"><button class="cancel" id="editMonthBtn">월 목표 수정</button><button class="ok" id="addTodoInMonth">투두 추가</button></div>
+  ${renderTodoGroups(m.todos||[],g,m)}`);
+  $('#editMonthBtn').onclick=()=>editMonth(m.id,g.id);
+  $('#addTodoInMonth').onclick=()=>editTodo(null);
+  bindModalTodoHandlers(()=>openMonthTodos(monthId,goalId));
+}
 function editGoal(id){const g=id?goals().find(x=>x.id===id):{icon:'🎯',title:'',desc:''};openModal(id?'목표 수정':'목표 추가',`<label>아이콘<input class="input" id="gIcon" value="${esc(g.icon||'🎯')}"></label><label>목표명<input class="input" id="gTitle" value="${esc(g.title||'')}"></label><label>설명<textarea class="textarea" id="gDesc">${esc(g.desc||'')}</textarea></label><div class="modalBtns">${id?'<button class="dangerBtn" id="delGoal">삭제</button>':''}<button class="cancel" id="cancelM">취소</button><button class="ok" id="saveGoal">저장</button></div>`);$('#cancelM').onclick=closeModal;$('#saveGoal').onclick=()=>{if(id){g.icon=$('#gIcon').value||'🎯';g.title=$('#gTitle').value||'새 목표';g.desc=$('#gDesc').value}else{const ng={id:uid(),icon:$('#gIcon').value||'🎯',title:$('#gTitle').value||'새 목표',desc:$('#gDesc').value,months:[]};goals().push(ng);biz().selectedGoal=ng.id}closeModal();render()}; if(id)$('#delGoal').onclick=()=>confirmDeleteGoal(id)}
 function editMonth(id,goalId){
   const g=goals().find(x=>x.id===goalId)||goal();
@@ -681,7 +743,7 @@ function editMonth(id,goalId){
 
   const t=f?.t||{
     text:'',
-    date:datePreset||biz().selectedDate||today(),
+    date:datePreset||'',
     owner:state.user
   };
 
@@ -691,7 +753,7 @@ function editMonth(id,goalId){
     </option>
   `).join('');
 
-  const monthOptions=(currentGoal.months||[]).map(m=>`
+  const monthOptions=(currentGoal.months||[]).slice().sort((a,b)=>String(a.month).localeCompare(String(b.month))).map(m=>`
     <option value="${m.id}" ${currentMonth?.id===m.id?'selected':''}>
       ${esc(m.month)} · ${esc(m.title||'월 목표')}
     </option>
@@ -715,7 +777,8 @@ function editMonth(id,goalId){
 <input class="input" id="tText" value="${esc(t.text||'')}" placeholder="해야 할 일을 입력하세요">
 
 <label>일정 날짜</label>
-<input class="input" id="tDate" type="date" value="${esc(t.date||today())}">
+<input class="input" id="tDate" type="date" value="${esc(t.date||'')}">
+<small class="dateHelp">비워두면 날짜 미지정 상태로 저장돼요.</small>
 
 <label>담당자</label>
 <input class="input" id="tOwner" value="${esc(t.owner||state.user)}">
@@ -736,7 +799,7 @@ function editMonth(id,goalId){
       return;
     }
 
-    select.innerHTML=selectedGoal.months.map(m=>`
+    select.innerHTML=selectedGoal.months.slice().sort((a,b)=>String(a.month).localeCompare(String(b.month))).map(m=>`
       <option value="${m.id}">
         ${esc(m.month)} · ${esc(m.title||'월 목표')}
       </option>
@@ -765,7 +828,7 @@ function editMonth(id,goalId){
 
     const value={
       text:$('#tText').value||'투두',
-      date:$('#tDate').value||today(),
+      date:$('#tDate').value||'',
       owner:$('#tOwner').value||state.user
     };
 
