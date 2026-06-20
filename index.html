@@ -883,11 +883,17 @@ function editMonth(id,goalId){
 
   if(id && f){
     $('#delTodo').onclick=()=>{
+  confirmDelete(
+    '투두 삭제',
+    '이 투두를 삭제할까요?',
+    ()=>{
       f.m.todos=f.m.todos.filter(x=>x.id!==id);
-      closeModal();
       save();
       render();
-    };
+    }
+  );
+};
+  
   }
 }
   function manageMemoCats(){const cats=biz().memoCategories||[];openModal('메모 카테고리 관리',`<label>새 카테고리<input class="input" id="newCat" placeholder="예: 거래처"></label><button class="ok" style="width:100%;margin-top:10px;padding:13px;border-radius:16px" id="addCat">추가</button><div class="miniList">${cats.map(c=>`<div class="miniItem"><input class="input" style="margin:0" value="${esc(c)}" data-cat-input="${esc(c)}"><button data-del-cat="${esc(c)}">삭제</button></div>`).join('')}</div><div class="modalBtns"><button class="cancel" id="cancelM">닫기</button><button class="ok" id="saveCats">수정 저장</button></div>`);$('#cancelM').onclick=closeModal;$('#addCat').onclick=()=>{const v=$('#newCat').value.trim();if(v&&!cats.includes(v))cats.push(v);closeModal();manageMemoCats();render()};$$('[data-del-cat]').forEach(b=>b.onclick=()=>{biz().memoCategories=cats.filter(c=>c!==b.dataset.delCat);biz().memos.forEach(m=>{if(m.cat===b.dataset.delCat)m.cat='업무'});closeModal();manageMemoCats();render()});$('#saveCats').onclick=()=>{const old=[...cats];biz().memoCategories=$$('[data-cat-input]').map(i=>i.value.trim()).filter(Boolean);biz().memos.forEach(m=>{const idx=old.indexOf(m.cat);if(idx>=0)m.cat=biz().memoCategories[idx]||'업무'});closeModal();render()}}
